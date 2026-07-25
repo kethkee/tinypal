@@ -1,9 +1,13 @@
 import FeatureCard from "../ui/FeatureCard";
+import {
+  CalendarDays,
+  Bot,
+  ChartColumn,
+} from "lucide-react";
 
 function Features() {
   return (
     <section className="bg-[#FFF8F0] py-24">
-
       <div className="max-w-7xl mx-auto px-8">
 
         <div className="text-center mb-16">
@@ -14,7 +18,7 @@ function Features() {
 
           <p className="mt-6 text-xl text-gray-600">
             Everything you need to stay productive,
-            organized, and motivated.
+            organized and stress free.
           </p>
 
         </div>
@@ -22,27 +26,26 @@ function Features() {
         <div className="grid md:grid-cols-3 gap-10">
 
           <FeatureCard
-            icon="📅"
+            icon={<CalendarDays size={36} />}
             title="Smart Planner"
-            description="Automatically organize your study schedule based on deadlines and priorities."
+            description="Automatically creates your study plan based on deadlines and priorities."
           />
 
           <FeatureCard
-            icon="🤖"
+            icon={<Bot size={36} />}
             title="AI Study Companion"
-            description="Receive personalized study tips, reminders, and motivation every day."
+            description="TinyPal motivates you, reminds you and keeps you focused every day."
           />
 
           <FeatureCard
-            icon="📊"
+            icon={<ChartColumn size={36} />}
             title="Progress Analytics"
-            description="Track your streaks, productivity, and academic growth with beautiful insights."
+            description="Visualize your growth with streaks, productivity insights and achievements."
           />
 
         </div>
 
       </div>
-
     </section>
   );
 }
