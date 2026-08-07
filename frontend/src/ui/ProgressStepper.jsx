@@ -1,0 +1,5 @@
+import { Check } from "lucide-react";
+function ProgressStepper({ currentStep, steps = [] }) {
+  return <div className="mb-9"><div className="mb-3 flex items-center justify-between text-sm"><span className="font-medium text-gray-700">Step {currentStep} of {steps.length}</span><span className="text-gray-500">{steps[currentStep - 1]}</span></div><div className="flex items-center gap-1 sm:gap-2">{steps.map((label, index) => { const number = index + 1; const complete = number < currentStep; const active = number === currentStep; return <div className="flex flex-1 items-center gap-1 sm:gap-2" key={label}><div aria-label={label} className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-semibold ${complete ? "bg-indigo-500 text-white" : active ? "border-2 border-indigo-500 bg-indigo-50 text-indigo-600" : "bg-gray-100 text-gray-400"}`}>{complete ? <Check size={14} /> : number}</div>{number !== steps.length && <div className={`h-1 flex-1 rounded-full ${complete ? "bg-indigo-500" : "bg-gray-100"}`} />}</div>; })}</div></div>;
+}
+export default ProgressStepper;

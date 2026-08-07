@@ -1,84 +1,14 @@
+import { CalendarDays, CheckCircle2, ChevronRight, Clock3, LogOut, Plus, Sparkles, Target } from "lucide-react";
+import { motion } from "framer-motion";
 import { useAuth } from "../context/AuthContext";
+import Button from "../ui/Button";
+import Card from "../ui/Card";
+import Badge from "../ui/Badge";
 
+const focusItems = ["Complete project research", "Review interview notes", "Outline next study session"];
+function Metric({ label, value, icon: Icon, tone }) { return <Card className="p-5"><div className="flex items-start justify-between"><div><p className="text-sm text-gray-500">{label}</p><p className="mt-2 text-2xl font-semibold text-gray-900">{value}</p></div><div className={`rounded-lg p-2.5 ${tone}`}><Icon size={20} /></div></div></Card>; }
 function Dashboard() {
-
-    const { user, logout } = useAuth();
-
-    return (
-
-        <div className="min-h-screen bg-[#FFF8F0]">
-
-            <div className="flex justify-between items-center p-6 shadow bg-white">
-
-                <h1 className="text-3xl font-bold text-red-500">
-                    🌸 TinyPal
-                </h1>
-
-                <button
-                    onClick={logout}
-                    className="bg-red-500 text-white px-5 py-2 rounded-xl"
-                >
-                    Logout
-                </button>
-
-            </div>
-
-            <div className="max-w-6xl mx-auto mt-10">
-
-                <h2 className="text-4xl font-bold mb-3">
-                    Welcome Back 👋
-                </h2>
-
-                <p className="text-gray-600 mb-10">
-                    {user}
-                </p>
-
-                <div className="grid grid-cols-3 gap-6">
-
-                    <div className="bg-white rounded-3xl shadow-lg p-8">
-
-                        <h3 className="font-bold text-xl mb-3">
-                            🔥 Study Streak
-                        </h3>
-
-                        <p className="text-5xl font-bold text-red-500">
-                            0
-                        </p>
-
-                    </div>
-
-                    <div className="bg-white rounded-3xl shadow-lg p-8">
-
-                        <h3 className="font-bold text-xl mb-3">
-                            ⭐ XP
-                        </h3>
-
-                        <p className="text-5xl font-bold text-red-500">
-                            0
-                        </p>
-
-                    </div>
-
-                    <div className="bg-white rounded-3xl shadow-lg p-8">
-
-                        <h3 className="font-bold text-xl mb-3">
-                            📅 Today's Tasks
-                        </h3>
-
-                        <p className="text-5xl font-bold text-red-500">
-                            0
-                        </p>
-
-                    </div>
-
-                </div>
-
-            </div>
-
-        </div>
-
-    );
-
+  const { user, logout } = useAuth(); const name = user?.split("@")[0] || "there";
+  return <main className="min-h-screen bg-[#FAFAFC]"><header className="border-b border-gray-200 bg-white"><div className="mx-auto flex max-w-7xl items-center justify-between px-5 py-4 sm:px-8"><div className="flex items-center gap-3"><div className="flex h-9 w-9 items-center justify-center rounded-lg bg-indigo-500 text-sm font-bold text-white">T</div><span className="font-semibold text-gray-900">TinyPal</span></div><Button variant="secondary" onClick={logout} className="min-h-9 px-3"><LogOut size={16} /><span className="hidden sm:inline">Log out</span></Button></div></header><div className="mx-auto max-w-7xl px-5 py-9 sm:px-8"><motion.section initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="flex flex-col justify-between gap-5 sm:flex-row sm:items-end"><div><p className="text-sm font-medium text-indigo-600">FRIDAY, AUGUST 7</p><h1 className="mt-2 text-3xl font-semibold tracking-tight text-gray-900">Good morning, {name}.</h1><p className="mt-2 text-gray-500">A clear plan leaves room for deep work.</p></div><Button><Plus size={17} /> Add task</Button></motion.section><section className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4"><Metric label="Focus time today" value="0h / 2h" icon={Clock3} tone="bg-indigo-50 text-indigo-600" /><Metric label="Tasks completed" value="0 / 3" icon={CheckCircle2} tone="bg-emerald-50 text-emerald-600" /><Metric label="Weekly progress" value="0%" icon={Target} tone="bg-amber-50 text-amber-600" /><Metric label="Upcoming blocks" value="0" icon={CalendarDays} tone="bg-violet-50 text-violet-600" /></section><section className="mt-8 grid gap-5 lg:grid-cols-[1.5fr_1fr]"><Card className="p-5 sm:p-6"><div className="flex items-center justify-between"><div><h2 className="font-semibold text-gray-900">Today’s focus</h2><p className="mt-1 text-sm text-gray-500">Start with the work that moves your priorities forward.</p></div><Badge>3 tasks</Badge></div><div className="mt-5 divide-y divide-gray-100">{focusItems.map((item) => <button type="button" className="flex w-full items-center gap-3 py-4 text-left" key={item}><span className="h-5 w-5 rounded-md border-2 border-gray-300" /><span className="flex-1 text-sm font-medium text-gray-700">{item}</span><ChevronRight size={17} className="text-gray-400" /></button>)}</div></Card><div className="space-y-5"><Card className="bg-indigo-500 p-5 text-white sm:p-6"><div className="flex items-center gap-2 text-indigo-100"><Sparkles size={17} /><span className="text-sm font-semibold">AI suggestion</span></div><p className="mt-4 text-lg font-medium leading-7">Schedule your most demanding task during your preferred focus period.</p><button type="button" className="mt-5 text-sm font-semibold text-white underline underline-offset-4">Build my plan</button></Card><Card className="p-5"><h2 className="font-semibold text-gray-900">Weekly progress</h2><div className="mt-5 h-2 overflow-hidden rounded-full bg-gray-100"><div className="h-full w-0 rounded-full bg-emerald-500" /></div><p className="mt-3 text-sm text-gray-500">Your first completed focus block will appear here.</p></Card></div></section></div></main>;
 }
-
 export default Dashboard;

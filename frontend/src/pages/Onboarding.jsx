@@ -1,136 +1,43 @@
+import { AnimatePresence, motion } from "framer-motion";
 import { useState } from "react";
-
 import WelcomeStep from "../components/onboarding/WelcomeStep";
-import AcademicStep from "../components/onboarding/AcademicStep";
 import SubjectsStep from "../components/onboarding/SubjectsStep";
-import CommitmentsStep from "../components/onboarding/CommitmentsStep";
 import GoalsStep from "../components/onboarding/GoalsStep";
+import CommitmentsStep from "../components/onboarding/CommitmentsStep";
 import RoutineStep from "../components/onboarding/RoutineStep";
 import ReviewStep from "../components/onboarding/ReviewStep";
-import ProgressBar from "../components/onboarding/ProgressBar";
+import ProgressStepper from "../ui/ProgressStepper";
+import PageContainer from "../ui/PageContainer";
+import Card from "../ui/Card";
+
+const steps = ["Welcome", "Tasks", "Priorities", "Schedule", "Preferences", "Review"];
 
 function Onboarding() {
+  const [step, setStep] = useState(1);
+  const [onboardingData, setOnboardingData] = useState({
+    tasks: [], priorities: [], commitments: [], wake_up_time: "", sleep_time: "",
+    preferred_study_time: "", daily_study_target: "", break_duration: "25",
+  });
+  const updateData = (newData) => setOnboardingData((previous) => ({ ...previous, ...newData }));
+  const nextStep = () => setStep((current) => Math.min(current + 1, steps.length));
+  const prevStep = () => setStep((current) => Math.max(current - 1, 1));
+  const common = { nextStep, prevStep, data: onboardingData, updateData };
 
-    const [step, setStep] = useState(1);
-    const [onboardingData, setOnboardingData] = useState({
-  college: "",
-  branch: "",
-  semester: "",
+  const content = [
+    <WelcomeStep key="welcome" nextStep={nextStep} />,
+    <SubjectsStep key="tasks" {...common} />,
+    <GoalsStep key="priorities" {...common} />,
+    <CommitmentsStep key="schedule" {...common} />,
+    <RoutineStep key="preferences" {...common} />,
+    <ReviewStep key="review" prevStep={prevStep} data={onboardingData} />,
+  ][step - 1];
 
-  subjects: [],
-
-  commitments: [],
-
-  goal: "",
-
-  wake_up_time: "",
-  sleep_time: "",
-
-  preferred_study_time: "",
-  daily_study_target: "",
-});
-
-    const nextStep = () => {
-
-        setStep((prev) => prev + 1);
-
-    };
-
-    const prevStep = () => {
-
-        setStep((prev) => prev - 1);
-
-    };
-    const updateData = (newData) => {
-  setOnboardingData((prev) => ({
-    ...prev,
-    ...newData,
-  }));
-};
-
-    const renderStep = () => {
-
-        switch (step) {
-
-            case 1:
-                return <WelcomeStep nextStep={nextStep} />;
-
-            case 2:
-                return (
-                    <AcademicStep
-                        nextStep={nextStep}
-                        prevStep={prevStep}
-                        data={onboardingData}
-                        updateData={updateData}
-                    />
-                );
-
-            case 3:
-                return (
-                    <SubjectsStep
-                        nextStep={nextStep}
-                        prevStep={prevStep}
-                        data={onboardingData}
-                        updateData={updateData}
-                    />
-                );
-
-            case 4:
-                return (
-                    <CommitmentsStep
-                        nextStep={nextStep}
-                        prevStep={prevStep}
-                        data={onboardingData}
-                        updateData={updateData}
-                    />
-                );
-
-            case 5:
-                return (
-                    <GoalsStep
-                        nextStep={nextStep}
-                        prevStep={prevStep}
-                        data={onboardingData}
-                        updateData={updateData}
-                    />
-                );
-
-            case 6:
-                return (
-                    <RoutineStep
-                        nextStep={nextStep}
-                        prevStep={prevStep}
-                        data={onboardingData}
-                        updateData={updateData}
-                    />
-                );
-
-            case 7:
-                return <ReviewStep prevStep={prevStep}
-                data={onboardingData} />;
-
-            default:
-                return <WelcomeStep nextStep={nextStep} />;
-        }
-
-    };
-
-    return (
-
-        <div className="min-h-screen bg-[#FFF8F0] flex justify-center items-center">
-
-            <div className="bg-white w-[700px] rounded-3xl shadow-xl p-10">
-
-                <ProgressBar step={step} totalSteps={7} />
-
-                {renderStep()}
-
-            </div>
-
-        </div>
-
-    );
-
+  return <PageContainer>
+    <Card className="max-w-4xl mx-auto p-6 sm:p-10">
+      <ProgressStepper currentStep={step} steps={steps} />
+      <AnimatePresence mode="wait"><motion.div key={step} initial={{ opacity: 0, x: 16 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -16 }} transition={{ duration: 0.22 }}>{content}</motion.div></AnimatePresence>
+    </Card>
+  </PageContainer>;
 }
 
 export default Onboarding;

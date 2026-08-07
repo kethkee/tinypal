@@ -1,6 +1,17 @@
 @import "tailwindcss";
 
+
+html {
+  scroll-behavior: smooth;
+}
+
 body {
   margin: 0;
-  font-family: "Poppins", sans-serif;
+  font-family: "Outfit", sans-serif;
+  background: #FAFAFC;
+  color: #111827;
+}
+
+* {
+  box-sizing: border-box;
 }

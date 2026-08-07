@@ -9,7 +9,7 @@ import Footer from "../components/sections/Footer";
 
 function Landing() {
   return (
-    <div className="bg-[#FFF8F0]">
+    <div className="bg-[#FAFAFC] text-gray-900">
       <Navbar />
       <Hero />
       <Features />

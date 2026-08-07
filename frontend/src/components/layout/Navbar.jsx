@@ -1,65 +1,7 @@
-import Button from "../ui/Button";
+import { Link } from "react-router-dom";
+import Button from "../../ui/Button";
 
 function Navbar() {
-  return (
-    <nav className="bg-[#FFF8F0]">
-      <div className="max-w-7xl mx-auto px-8 py-5 flex items-center justify-between">
-
-        {/* Logo */}
-
-        <div className="flex items-center gap-2 cursor-pointer">
-
-          <span className="text-3xl">🌸</span>
-
-          <div>
-
-            <h1 className="text-2xl font-black text-gray-900">
-              TinyPal
-            </h1>
-
-            <p className="text-xs text-gray-500 -mt-1">
-              Your Tiny Study Companion
-            </p>
-
-          </div>
-
-        </div>
-
-        {/* Navigation */}
-
-        <ul className="hidden md:flex gap-10 font-medium text-gray-700">
-
-          <li className="cursor-pointer hover:text-[#FF5A5F] transition">
-            Home
-          </li>
-
-          <li className="cursor-pointer hover:text-[#FF5A5F] transition">
-            Features
-          </li>
-
-          <li className="cursor-pointer hover:text-[#FF5A5F] transition">
-            About
-          </li>
-
-        </ul>
-
-        {/* Buttons */}
-
-        <div className="flex gap-4">
-
-          <Button variant="secondary">
-            Login
-          </Button>
-
-          <Button>
-            Sign Up
-          </Button>
-
-        </div>
-
-      </div>
-    </nav>
-  );
+  return <nav className="border-b border-gray-200 bg-white"><div className="mx-auto flex max-w-7xl items-center justify-between px-5 py-4 sm:px-8"><Link to="/" className="flex items-center gap-2.5"><span className="flex h-9 w-9 items-center justify-center rounded-lg bg-indigo-500 text-sm font-bold text-white">T</span><span className="text-lg font-semibold text-gray-900">TinyPal</span></Link><div className="hidden items-center gap-7 text-sm font-medium text-gray-600 md:flex"><a href="#features" className="hover:text-indigo-600">Features</a><a href="#how-it-works" className="hover:text-indigo-600">How it works</a></div><div className="flex gap-2"><Link to="/login"><Button variant="ghost" className="min-h-9 px-3">Log in</Button></Link><Link to="/signup"><Button className="min-h-9 px-3">Get started</Button></Link></div></div></nav>;
 }
-
 export default Navbar;
