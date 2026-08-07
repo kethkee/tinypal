@@ -44,6 +44,7 @@ INSTALLED_APPS = [
     "corsheaders",
 
     "accounts",
+    "profiles",
     "planner",
     "analytics_app",
     "ai_engine",
