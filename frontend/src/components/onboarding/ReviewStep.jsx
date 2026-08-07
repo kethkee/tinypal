@@ -1,4 +1,27 @@
+import { createProfile } from "../services/profileService";
+import { useNavigate } from "react-router-dom";
+
 function ReviewStep({ prevStep, data }) {
+  const navigate = useNavigate();
+  const handleFinish = async () => {
+
+    try {
+
+        await createProfile(data);
+
+        alert("Profile created successfully!");
+
+        navigate("/dashboard");
+
+    } catch (error) {
+
+        console.error(error);
+
+        alert("Failed to save profile.");
+
+    }
+
+};
   return (
     <div>
 
@@ -76,6 +99,7 @@ function ReviewStep({ prevStep, data }) {
 
         <button
           className="bg-red-500 text-white px-8 py-3 rounded-xl"
+          onClick={handleFinish}  
         >
           Finish ✨
         </button>

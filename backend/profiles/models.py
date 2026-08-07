@@ -39,6 +39,7 @@ class Profile(models.Model):
         max_length=20,
         choices=STUDY_TIME_CHOICES,
     )
+    daily_study_target = models.PositiveIntegerField(default=2)
 
     goal = models.CharField(
         max_length=30,
