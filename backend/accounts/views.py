@@ -18,7 +18,8 @@ class RegisterView(generics.CreateAPIView):
 
         return Response(
             {
-                "message": "Account created successfully."
+                "success": True,
+                "message": "Account created successfully!",
             },
             status=status.HTTP_201_CREATED,
         )
