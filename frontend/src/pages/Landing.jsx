@@ -9,7 +9,7 @@ import Footer from "../components/sections/Footer";
 
 function Landing() {
   return (
-    <>
+    <div className="bg-[#FFF8F0]">
       <Navbar />
       <Hero />
       <Features />
@@ -18,7 +18,7 @@ function Landing() {
       <WhyTinyPal />
       <CTA />
       <Footer />
-    </>
+    </div>
   );
 }
 
