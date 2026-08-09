@@ -30,7 +30,7 @@ const features = [
 
 function WhyTinyPal() {
   return (
-    <section className="bg-[#FFF8F0] py-24">
+    <section className="bg-[#FAFAFC] py-24">
       <div className="max-w-7xl mx-auto px-8">
 
         <div className="text-center mb-16">
@@ -50,7 +50,7 @@ function WhyTinyPal() {
               key={index}
               className="bg-white rounded-3xl p-8 text-center shadow-lg hover:shadow-2xl hover:-translate-y-2 transition-all duration-300"
             >
-              <div className="w-16 h-16 rounded-2xl bg-[#FFE5EC] text-[#FF5A5F] flex items-center justify-center mx-auto">
+              <div className="w-16 h-16 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center mx-auto">
                 {item.icon}
               </div>
 

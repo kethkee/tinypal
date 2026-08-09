@@ -5,7 +5,7 @@ import Card from "../../ui/Card";
 import Input from "../../ui/Input";
 import Select from "../../ui/Select";
 import Badge from "../../ui/Badge";
-const categories = ["Assignment", "Project", "Study topic", "Meeting", "Personal", "Internship", "Other"];
+const categories = ["Assignment", "Project", "Study Topic", "Placement", "Internship", "Meeting", "Personal", "Reminder", "Other"];
 function SubjectsStep({ nextStep, prevStep, data, updateData }) {
   const [task, setTask] = useState(""); const [category, setCategory] = useState("Assignment"); const [tasks, setTasks] = useState(data.tasks || []);
   const addTask = () => { if (!task.trim()) return; setTasks((items) => [...items, { title: task.trim(), category }]); setTask(""); };

@@ -11,15 +11,15 @@ function FeatureCard({ icon, title, description }) {
       duration-300
       border
       border-transparent
-      hover:border-[#FF5A5F]
+      hover:border-indigo-400
     ">
 
       <div className="
         w-16
         h-16
         rounded-2xl
-        bg-[#FFE5EC]
-        text-[#FF5A5F]
+        bg-indigo-50
+        text-indigo-600
         flex
         items-center
         justify-center

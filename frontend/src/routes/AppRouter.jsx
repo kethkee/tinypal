@@ -7,6 +7,7 @@ import Dashboard from "../pages/Dashboard";
 
 import ProtectedRoute from "./ProtectedRoute";
 import Onboarding from "../pages/Onboarding";
+import Planner from "../pages/Planner";
 
 function AppRouter() {
 
@@ -48,6 +49,10 @@ function AppRouter() {
                             <Onboarding />
                         </ProtectedRoute>
                     }
+                />
+                <Route
+                    path="/planner"
+                    element={<ProtectedRoute><Planner /></ProtectedRoute>}
                 />
 
             </Routes>

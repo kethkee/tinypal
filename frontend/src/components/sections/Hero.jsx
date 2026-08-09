@@ -1,67 +1,8 @@
-import Button from "../ui/Button";
+import { ArrowRight, CalendarDays, Sparkles } from "lucide-react";
+import { Link } from "react-router-dom";
+import Button from "../../ui/Button";
 
 function Hero() {
-  return (
-    <section className="bg-[#FFF8F0]">
-      <div className="max-w-7xl mx-auto min-h-[85vh] px-8 grid lg:grid-cols-2 gap-12 items-center">
-
-        {/* Left */}
-
-        <div>
-
-          <p className="text-[#FF5A5F] font-semibold text-lg mb-4">
-            🌸 Meet TinyPal
-          </p>
-
-          <h1 className="text-6xl font-black text-gray-900 leading-tight">
-
-            Organize Less.
-
-            <br />
-
-            Learn More.
-
-          </h1>
-
-          <p className="mt-8 text-xl text-gray-600 leading-9 max-w-xl">
-
-            TinyPal is your AI-powered study companion that helps you
-            organize your day, build better habits, stay motivated,
-            and achieve your academic goals effortlessly.
-
-          </p>
-
-          <div className="flex gap-5 mt-10">
-
-            <Button>
-              Start Journey
-            </Button>
-
-            <Button variant="secondary">
-              Learn More
-            </Button>
-
-          </div>
-
-        </div>
-
-        {/* Right */}
-
-        <div className="flex justify-center">
-
-          <div className="w-[420px] h-[420px] rounded-[40px] bg-gradient-to-br from-pink-100 to-red-100 shadow-2xl flex items-center justify-center">
-
-            <span className="text-[170px]">
-              🤖
-            </span>
-
-          </div>
-
-        </div>
-
-      </div>
-    </section>
-  );
+  return <section className="overflow-hidden bg-[#FAFAFC]"><div className="mx-auto grid min-h-[78vh] max-w-7xl items-center gap-12 px-5 py-16 sm:px-8 lg:grid-cols-2"><div><div className="inline-flex items-center gap-2 rounded-full border border-indigo-100 bg-indigo-50 px-3 py-1.5 text-sm font-semibold text-indigo-700"><Sparkles size={15} /> Your calm study companion</div><h1 className="mt-6 text-5xl font-semibold tracking-tight text-gray-900 sm:text-6xl">Make space for what matters.</h1><p className="mt-6 max-w-xl text-lg leading-8 text-gray-600">TinyPal turns your tasks, commitments, and preferred rhythm into a practical plan you can actually follow.</p><div className="mt-9 flex flex-wrap gap-3"><Link to="/signup"><Button>Start planning <ArrowRight size={17} /></Button></Link><a href="#how-it-works"><Button variant="secondary">See how it works</Button></a></div><div className="mt-10 flex items-center gap-3 text-sm text-gray-500"><CalendarDays size={17} className="text-indigo-500" /> Built around your real day, not a generic timetable.</div></div><div className="relative mx-auto w-full max-w-md"><div className="absolute inset-6 rounded-[2.5rem] bg-indigo-200/50 blur-3xl" /><div className="relative overflow-hidden rounded-[2.5rem] border border-indigo-100 bg-gradient-to-br from-indigo-50 to-violet-100 p-3 shadow-[0_24px_70px_rgba(79,70,229,0.18)]"><img src="/images/tinypal-productivity-space.png" alt="Floating study and work tools" className="aspect-square w-full rounded-[2rem] object-cover" /></div></div></div></section>;
 }
-
 export default Hero;

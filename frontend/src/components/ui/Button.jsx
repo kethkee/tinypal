@@ -10,10 +10,10 @@ function Button({
   const variants = {
 
     primary:
-      "bg-[#FF5A5F] text-white hover:bg-[#E94A50] shadow-lg",
+      "bg-indigo-500 text-white hover:bg-indigo-600 shadow-lg",
 
     secondary:
-      "border-2 border-[#FF5A5F] text-[#FF5A5F] hover:bg-[#FFF1F2]",
+      "border-2 border-indigo-500 text-indigo-600 hover:bg-indigo-50",
 
   };
 

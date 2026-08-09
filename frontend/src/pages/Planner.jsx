@@ -1,0 +1,13 @@
+import { ArrowLeft, CalendarDays, Clock3 } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
+import { getPlan } from "../services/profileService";
+import Card from "../ui/Card";
+import Badge from "../ui/Badge";
+
+function Planner() {
+  const [plan, setPlan] = useState(null); const [error, setError] = useState("");
+  useEffect(() => { getPlan().then(setPlan).catch(() => setError("Your schedule could not be generated. Complete onboarding and try again.")); }, []);
+  return <main className="min-h-screen bg-[#FAFAFC]"><div className="mx-auto max-w-3xl px-5 py-10"><Link to="/dashboard" className="inline-flex items-center gap-2 text-sm font-semibold text-indigo-600"><ArrowLeft size={16} /> Back to dashboard</Link><header className="mt-7"><p className="text-sm font-semibold text-indigo-600">{plan?.date?.toUpperCase() || "TODAY'S PLAN"}</p><h1 className="mt-2 text-3xl font-semibold tracking-tight text-gray-900">A focused schedule, built for today.</h1><p className="mt-3 text-gray-500">Uses your local current day, preferred study period, target, breaks, incomplete tasks, and today’s commitments.</p></header>{error && <p role="alert" className="mt-6 rounded-lg bg-red-50 p-3 text-sm text-red-700">{error}</p>}{!plan && !error && <p className="mt-8 text-gray-500">Generating today’s schedule...</p>}{plan && <><p className="mt-5 text-sm text-gray-500">Generated at {plan.generated_at}</p><Card className="mt-4 p-5"><div className="flex items-center gap-2"><Clock3 size={18} className="text-indigo-500" /><h2 className="font-semibold text-gray-900">Focus blocks</h2></div><div className="mt-5 space-y-3">{plan.blocks.length ? plan.blocks.map((block) => <div key={`${block.start}-${block.title}`} className="flex items-center gap-4 rounded-lg border border-indigo-100 p-4"><p className="w-24 text-sm font-semibold text-indigo-600">{block.start}–{block.end}</p><div><p className="font-medium text-gray-800">{block.title}</p><Badge className="mt-1">{block.category}</Badge></div></div>) : <p className="text-sm text-gray-500">All caught up — add an incomplete task to generate focus blocks.</p>}</div></Card><Card className="mt-5 p-5"><div className="flex items-center gap-2"><CalendarDays size={18} className="text-indigo-500" /><h2 className="font-semibold text-gray-900">Recurring commitments</h2></div><div className="mt-4 space-y-2">{plan.commitments.length ? plan.commitments.map((item, index) => <p className="text-sm text-gray-600" key={`${item.title}-${index}`}>{item.day} · {item.start}–{item.end} · {item.title}</p>) : <p className="text-sm text-gray-500">No recurring commitments saved.</p>}</div></Card></>}</div></main>;
+}
+export default Planner;

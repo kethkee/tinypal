@@ -7,7 +7,7 @@ import {
 
 function Features() {
   return (
-    <section className="bg-[#FFF8F0] py-24">
+    <section id="features" className="bg-indigo-50/60 py-24">
       <div className="max-w-7xl mx-auto px-8">
 
         <div className="text-center mb-16">

@@ -4,11 +4,11 @@ function StepCard({ number, icon, title, description, showArrow }) {
   return (
     <div className="relative flex flex-col items-center text-center">
 
-      <div className="w-16 h-16 rounded-full bg-[#FF5A5F] text-white flex items-center justify-center text-2xl font-bold shadow-lg">
+      <div className="w-16 h-16 rounded-full bg-indigo-500 text-white flex items-center justify-center text-2xl font-bold shadow-lg">
         {number}
       </div>
 
-      <div className="mt-8 w-20 h-20 rounded-3xl bg-[#FFE5EC] text-[#FF5A5F] flex items-center justify-center shadow-md">
+      <div className="mt-8 w-20 h-20 rounded-3xl bg-indigo-50 text-indigo-600 flex items-center justify-center shadow-md">
         {icon}
       </div>
 
@@ -22,7 +22,7 @@ function StepCard({ number, icon, title, description, showArrow }) {
 
       {showArrow && (
         <ArrowRight
-          className="hidden lg:block absolute top-8 -right-16 text-[#FF5A5F]"
+          className="hidden lg:block absolute top-8 -right-16 text-indigo-400"
           size={40}
         />
       )}

@@ -2,7 +2,7 @@ import Button from "../ui/Button";
 
 function CTA() {
   return (
-    <section className="py-24 bg-gradient-to-r from-[#FF5A5F] to-[#FF7A7F]">
+    <section className="py-24 bg-gradient-to-r from-indigo-600 to-violet-600">
       <div className="max-w-5xl mx-auto px-8 text-center">
 
         <h2 className="text-5xl font-black text-white">

@@ -24,4 +24,5 @@ urlpatterns = [
     ),
 
     path("api/profile/", include("profiles.urls")),
+    path("api/planner/", include("planner.urls")),
 ]
