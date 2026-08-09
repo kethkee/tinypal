@@ -5,9 +5,9 @@ function Footer() {
       <div className="max-w-7xl mx-auto px-8 flex flex-col md:flex-row justify-between items-center">
 
         <div>
-          <h2 className="text-3xl font-black">
-            🌸 TinyPal
-          </h2>
+          <h2 className="text-3xl font-semibold tracking-tight">
+  TinyPal
+</h2>
 
           <p className="text-gray-400 mt-2">
             Your Tiny AI Study Companion

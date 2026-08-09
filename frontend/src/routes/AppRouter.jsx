@@ -8,7 +8,8 @@ import Dashboard from "../pages/Dashboard";
 import ProtectedRoute from "./ProtectedRoute";
 import Onboarding from "../pages/Onboarding";
 import Planner from "../pages/Planner";
-
+import VerifyEmail from "../pages/VerifyEmail";
+import CheckEmail from "../pages/CheckEmail";
 function AppRouter() {
 
     return (
@@ -54,6 +55,15 @@ function AppRouter() {
                     path="/planner"
                     element={<ProtectedRoute><Planner /></ProtectedRoute>}
                 />
+                <Route
+  path="/verify-email/:userId/:token"
+  element={<VerifyEmail />}
+/>
+
+<Route
+  path="/check-email"
+  element={<CheckEmail />}
+/>
 
             </Routes>
 
