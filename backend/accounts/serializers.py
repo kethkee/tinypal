@@ -1,9 +1,11 @@
 from django.contrib.auth.password_validation import validate_password
 from rest_framework import serializers
+
 from .models import User
 
 
 class RegisterSerializer(serializers.ModelSerializer):
+
     password = serializers.CharField(
         write_only=True,
         required=True,
@@ -27,22 +29,28 @@ class RegisterSerializer(serializers.ModelSerializer):
         )
 
     def validate_email(self, value):
+        value = value.strip().lower()
+
         if User.objects.filter(email=value).exists():
             raise serializers.ValidationError(
                 "An account with this email already exists."
             )
+
         return value
 
     def validate(self, attrs):
+
         if attrs["password"] != attrs["confirm_password"]:
             raise serializers.ValidationError(
                 {
                     "confirm_password": "Passwords do not match."
                 }
             )
+
         return attrs
 
     def create(self, validated_data):
+
         validated_data.pop("confirm_password")
 
         user = User.objects.create_user(
@@ -50,5 +58,8 @@ class RegisterSerializer(serializers.ModelSerializer):
             full_name=validated_data["full_name"],
             password=validated_data["password"],
         )
+
+        user.email_verified = False
+        user.save(update_fields=["email_verified"])
 
         return user

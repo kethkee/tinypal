@@ -1,19 +1,22 @@
 from django.contrib import admin
 from django.urls import path, include
 
-from rest_framework_simplejwt.views import (
-    TokenObtainPairView,
-    TokenRefreshView,
-)
+from rest_framework_simplejwt.views import TokenRefreshView
+
+from accounts.views import TinyPalTokenObtainPairView
+
 
 urlpatterns = [
     path("admin/", admin.site.urls),
 
-    path("api/auth/", include("accounts.urls")),
+    path(
+        "api/auth/",
+        include("accounts.urls")
+    ),
 
     path(
         "api/token/",
-        TokenObtainPairView.as_view(),
+        TinyPalTokenObtainPairView.as_view(),
         name="token_obtain_pair",
     ),
 
@@ -23,6 +26,13 @@ urlpatterns = [
         name="token_refresh",
     ),
 
-    path("api/profile/", include("profiles.urls")),
-    path("api/planner/", include("planner.urls")),
+    path(
+        "api/profile/",
+        include("profiles.urls")
+    ),
+
+    path(
+        "api/planner/",
+        include("planner.urls")
+    ),
 ]

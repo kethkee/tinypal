@@ -1,12 +1,35 @@
-import { motion } from "framer-motion";
+function Button({
+  children,
+  variant = "primary",
+  onClick,
+  type = "button",
+  disabled = false,
+  className = "",
+}) {
+  const base =
+    "inline-flex items-center justify-center gap-2 px-6 py-3 rounded-2xl font-semibold transition-all duration-300";
 
-const variants = {
-  primary: "bg-indigo-500 text-white shadow-sm hover:bg-indigo-600",
-  secondary: "border border-gray-200 bg-white text-gray-700 hover:bg-gray-50",
-  ghost: "text-gray-600 hover:bg-gray-100",
-  danger: "text-red-600 hover:bg-red-50",
-};
-function Button({ children, onClick, variant = "primary", type = "button", className = "", disabled = false }) {
-  return <motion.button whileHover={disabled ? {} : { y: -1 }} whileTap={disabled ? {} : { scale: 0.98 }} type={type} onClick={onClick} disabled={disabled} className={`inline-flex min-h-11 items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold transition focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 ${variants[variant]} ${className}`}>{children}</motion.button>;
+  const variants = {
+    primary:
+      "bg-indigo-600 text-white shadow-lg shadow-indigo-200 hover:bg-indigo-700 hover:-translate-y-0.5",
+    secondary:
+      "border border-indigo-200 bg-white text-indigo-600 hover:bg-indigo-50 hover:-translate-y-0.5",
+    ghost:
+      "bg-transparent text-gray-600 hover:bg-gray-100 hover:text-gray-900",
+    danger:
+      "bg-red-50 text-red-600 hover:bg-red-100",
+  };
+
+  return (
+    <button
+      type={type}
+      onClick={onClick}
+      disabled={disabled}
+      className={`${base} ${variants[variant] || variants.primary} ${className}`}
+    >
+      {children}
+    </button>
+  );
 }
+
 export default Button;

@@ -153,3 +153,11 @@ SIMPLE_JWT = {
     "ROTATE_REFRESH_TOKENS": False,
     "BLACKLIST_AFTER_ROTATION": True,
 }
+
+# TinyPal email settings
+
+FRONTEND_URL = "http://localhost:5173"
+
+EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
+
+DEFAULT_FROM_EMAIL = "TinyPal <noreply@tinypal.local>"

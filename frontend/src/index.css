@@ -1,25 +1,158 @@
 @import "tailwindcss";
 
-
 html {
   scroll-behavior: smooth;
+}
+
+:root {
+  --tiny-bg: #f7f5ff;
+  --tiny-purple: #7567d8;
+  --tiny-purple-light: #eeeaff;
+  --tiny-text: #17152a;
+  --tiny-muted: #716d82;
 }
 
 body {
   margin: 0;
   font-family: "Outfit", sans-serif;
-  background: #FAFAFC;
-  color: #111827;
+  color: var(--tiny-text);
+
+  background-color: var(--tiny-bg);
+
+  /*
+    Soft pixel-grid background.
+    Two repeating gradients create tiny square pixels.
+  */
+  background-image:
+    linear-gradient(
+      rgba(117, 103, 216, 0.055) 1px,
+      transparent 1px
+    ),
+    linear-gradient(
+      90deg,
+      rgba(117, 103, 216, 0.055) 1px,
+      transparent 1px
+    );
+
+  background-size: 24px 24px;
+
+  min-height: 100vh;
 }
 
 * {
   box-sizing: border-box;
 }
 
-button, [role="button"], a {
+button,
+[role="button"],
+a {
   cursor: pointer;
 }
 
 button:disabled {
   cursor: not-allowed;
+}
+
+/* =========================================
+   TinyPal ambient background
+   ========================================= */
+
+.tiny-page {
+  position: relative;
+  min-height: 100vh;
+  overflow: hidden;
+  isolation: isolate;
+}
+
+.tiny-page::before {
+  content: "";
+  position: fixed;
+  width: 420px;
+  height: 420px;
+  top: -160px;
+  left: -120px;
+  border-radius: 50%;
+  background: rgba(174, 160, 255, 0.18);
+  filter: blur(80px);
+  pointer-events: none;
+  z-index: -1;
+}
+
+.tiny-page::after {
+  content: "";
+  position: fixed;
+  width: 380px;
+  height: 380px;
+  right: -120px;
+  bottom: -140px;
+  border-radius: 50%;
+  background: rgba(204, 192, 255, 0.22);
+  filter: blur(80px);
+  pointer-events: none;
+  z-index: -1;
+}
+
+/* =========================================
+   Floating sparkle
+   ========================================= */
+
+.tiny-sparkle {
+  position: absolute;
+  pointer-events: none;
+  color: #8b7ce8;
+  animation: tinySparkle 3.5s ease-in-out infinite;
+}
+
+@keyframes tinySparkle {
+  0%,
+  100% {
+    opacity: 0.15;
+    transform: scale(0.7) rotate(0deg);
+  }
+
+  50% {
+    opacity: 0.85;
+    transform: scale(1.15) rotate(45deg);
+  }
+}
+
+/* =========================================
+   Floating object
+   ========================================= */
+
+.tiny-float {
+  animation: tinyFloat 6s ease-in-out infinite;
+}
+
+@keyframes tinyFloat {
+  0%,
+  100% {
+    transform: translateY(0px) rotate(0deg);
+  }
+
+  50% {
+    transform: translateY(-12px) rotate(1deg);
+  }
+}
+
+/* =========================================
+   Soft text reveal
+   ========================================= */
+
+.tiny-text-reveal {
+  animation: tinyTextReveal 1.2s ease forwards;
+}
+
+@keyframes tinyTextReveal {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+    filter: blur(5px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+    filter: blur(0);
+  }
 }
