@@ -184,7 +184,10 @@ SIMPLE_JWT = {
 
 # TinyPal email settings
 
-FRONTEND_URL = "http://localhost:5173"
+FRONTEND_URL = os.environ.get(
+    "FRONTEND_URL",
+    "http://localhost:5173",
+)
 
 EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
 
