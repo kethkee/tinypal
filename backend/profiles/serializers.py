@@ -54,12 +54,24 @@ class ProfileSerializer(serializers.ModelSerializer):
     tasks = TaskSerializer(many=True)
     commitments = CommitmentSerializer(many=True, required=False)
     priorities = serializers.ListField(child=serializers.CharField(max_length=100), allow_empty=False)
+    preferred_study_times = serializers.ListField(
+    child=serializers.ChoiceField(
+        choices=Profile.STUDY_TIME_CHOICES
+    ),
+    allow_empty=False,
+)
 
     class Meta:
         model = Profile
         exclude = ["user", "college", "branch", "semester"]
         read_only_fields = ["onboarding_completed"]
 
+    def validate_preferred_study_times(self, value):
+        if not value:
+            raise serializers.ValidationError(
+                "Select at least one preferred study period."
+            )
+        return list(dict.fromkeys(value))
     def validate_priorities(self, value):
         values = [item.strip() for item in value if item.strip()]
         if not values:
