@@ -6,7 +6,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from profiles.models import Profile
+from profiles.models import DailyPlan, Profile
 
 
 PERIOD_STARTS = {
@@ -16,49 +16,61 @@ PERIOD_STARTS = {
     "night": "20:00",
 }
 
-BLOCK_DURATION = timedelta(minutes=60)
+BLOCK_DURATION = timedelta(
+    minutes=60
+)
 
 
 class PlannerView(APIView):
-    """
-    Generate a deterministic daily schedule while respecting:
 
-    - wake-up time
-    - sleep time
-    - preferred study windows
-    - recurring commitments
-    - break duration
-    - daily study target
-    - incomplete tasks
-    """
-
-    permission_classes = [IsAuthenticated]
-
+    permission_classes = [
+        IsAuthenticated
+    ]
 
     @staticmethod
     def at_time(day, value):
+
         return datetime.combine(
             day,
             datetime.strptime(
                 value,
-                "%H:%M"
+                "%H:%M",
             ).time(),
         )
-
 
     def get(self, request):
 
         try:
+
             profile = request.user.profile
 
         except Profile.DoesNotExist:
 
             return Response(
                 {
-                    "detail": (
-                        "Complete onboarding "
-                        "to generate a plan."
-                    )
+                    "detail":
+                    "Complete your profile first."
+                },
+                status=404,
+            )
+
+
+        today = timezone.localdate()
+
+
+        try:
+
+            daily_plan = DailyPlan.objects.get(
+                user=request.user,
+                date=today,
+            )
+
+        except DailyPlan.DoesNotExist:
+
+            return Response(
+                {
+                    "detail":
+                    "Create today's plan first."
                 },
                 status=404,
             )
@@ -68,76 +80,59 @@ class PlannerView(APIView):
             timezone.now()
         )
 
-        today = now.date()
-
-
-        # -------------------------------------------------
-        # Awake window
-        # -------------------------------------------------
 
         wake = self.at_time(
             today,
-            profile.wake_up_time.strftime("%H:%M"),
+            profile.wake_up_time.strftime(
+                "%H:%M"
+            ),
         )
 
         sleep = self.at_time(
             today,
-            profile.sleep_time.strftime("%H:%M"),
+            profile.sleep_time.strftime(
+                "%H:%M"
+            ),
         )
 
 
-        # If sleep is after midnight,
-        # treat it as the following day.
         if sleep <= wake:
             sleep += timedelta(days=1)
 
 
-        # -------------------------------------------------
-        # Preferred study periods
-        # -------------------------------------------------
-
         preferred_periods = (
             profile.preferred_study_times
-            or [profile.preferred_study_time]
+            or [
+                profile.preferred_study_time
+            ]
         )
 
 
-        preferred_periods = [
-            period
-            for period in preferred_periods
-            if period in PERIOD_STARTS
-        ]
-
-
-        if not preferred_periods:
-            preferred_periods = ["morning"]
-
-
         preferred_starts = [
+
             self.at_time(
                 today,
                 PERIOD_STARTS[period],
             )
-            for period in preferred_periods
+
+            for period
+            in preferred_periods
+
+            if period in PERIOD_STARTS
+
         ]
 
 
-        # Start from the earliest preferred window.
-        preferred_start = min(
-            preferred_starts
-        )
+        if preferred_starts:
 
+            start = max(
+                wake,
+                min(preferred_starts),
+            )
 
-        # Never start before wake-up.
-        start = max(
-            wake,
-            preferred_start,
-        )
+        else:
 
-
-        # Never create a block beyond sleep.
-        if start + BLOCK_DURATION > sleep:
-            start = sleep
+            start = wake
 
 
         break_length = timedelta(
@@ -145,35 +140,46 @@ class PlannerView(APIView):
         )
 
 
-        # -------------------------------------------------
-        # Today's commitments
-        # -------------------------------------------------
+        today_name = now.strftime(
+            "%A"
+        )
 
-        today_name = now.strftime("%A")
 
         commitments = []
 
 
         for item in profile.commitments:
 
-            if item["day"] != today_name:
+            if (
+                item["day"]
+                != today_name
+            ):
                 continue
 
 
-            commitment_start = self.at_time(
-                today,
-                item["start"],
+            commitment_start = (
+                self.at_time(
+                    today,
+                    item["start"],
+                )
             )
 
-            commitment_end = self.at_time(
-                today,
-                item["end"],
+            commitment_end = (
+                self.at_time(
+                    today,
+                    item["end"],
+                )
             )
 
 
-            # Commitment crosses midnight.
-            if commitment_end <= commitment_start:
-                commitment_end += timedelta(days=1)
+            if (
+                commitment_end
+                <= commitment_start
+            ):
+
+                commitment_end += (
+                    timedelta(days=1)
+                )
 
 
             commitments.append(
@@ -184,13 +190,10 @@ class PlannerView(APIView):
             )
 
 
-        # -------------------------------------------------
-        # Incomplete tasks
-        # -------------------------------------------------
-
         remaining_tasks = [
             task
-            for task in profile.tasks
+            for task
+            in daily_plan.tasks
             if not task.get("completed")
         ]
 
@@ -198,13 +201,13 @@ class PlannerView(APIView):
         blocks = []
 
 
-        # -------------------------------------------------
-        # Generate focus blocks
-        # -------------------------------------------------
+        for task in remaining_tasks:
 
-        for task in remaining_tasks[
-            :profile.daily_study_target
-        ]:
+            if len(blocks) >= (
+                profile.daily_study_target
+            ):
+                break
+
 
             moved = True
 
@@ -214,8 +217,8 @@ class PlannerView(APIView):
                 moved = False
 
                 end = (
-                    start +
-                    BLOCK_DURATION
+                    start
+                    + BLOCK_DURATION
                 )
 
 
@@ -225,9 +228,11 @@ class PlannerView(APIView):
                 ) in commitments:
 
                     if (
-                        start < commitment_end
+                        start
+                        < commitment_end
                         and
-                        end > commitment_start
+                        end
+                        > commitment_start
                     ):
 
                         start = (
@@ -241,82 +246,99 @@ class PlannerView(APIView):
 
 
             end = (
-                start +
-                BLOCK_DURATION
+                start
+                + BLOCK_DURATION
             )
 
 
-            # No room before sleep.
             if end > sleep:
                 break
 
 
             blocks.append(
                 {
-                    "title": task["title"],
-                    "category": task["category"],
-                    "start": start.strftime(
-                        "%H:%M"
-                    ),
-                    "end": end.strftime(
-                        "%H:%M"
-                    ),
+                    "title":
+                        task["title"],
+
+                    "category":
+                        task["category"],
+
+                    "start":
+                        start.strftime(
+                            "%H:%M"
+                        ),
+
+                    "end":
+                        end.strftime(
+                            "%H:%M"
+                        ),
                 }
             )
 
 
             start = (
-                end +
-                break_length
+                end
+                + break_length
             )
 
 
-        planned_count = len(blocks)
+        planned_count = len(
+            blocks
+        )
 
 
         return Response(
             {
-                "method": (
-                    "Deterministic schedule "
-                    "within your awake hours "
-                    "and recurring commitments."
-                ),
+                "method":
+                    "Daily plan generated using "
+                    "the user's permanent routine, "
+                    "today's tasks, and recurring commitments.",
 
-                "blocks": blocks,
+                "blocks":
+                    blocks,
 
-                "commitments": (
-                    profile.commitments
-                ),
+                "commitments":
+                    profile.commitments,
 
-                "date": (
-                    f"{now.strftime('%A, %B')} "
-                    f"{now.day}"
-                ),
+                "priorities":
+                    daily_plan.priorities,
 
-                "generated_at": now.strftime(
-                    "%H:%M"
-                ),
+                "tasks":
+                    daily_plan.tasks,
 
-                "awake_window": {
-                    "start": wake.strftime(
+                "date":
+                    today.strftime(
+                        "%A, %B %d"
+                    ),
+
+                "generated_at":
+                    now.strftime(
                         "%H:%M"
                     ),
-                    "end": sleep.strftime(
-                        "%H:%M"
+
+                "awake_window":
+                    {
+                        "start":
+                            wake.strftime(
+                                "%H:%M"
+                            ),
+
+                        "end":
+                            sleep.strftime(
+                                "%H:%M"
+                            ),
+                    },
+
+                "preferred_study_times":
+                    preferred_periods,
+
+                "unscheduled_tasks":
+                    max(
+                        0,
+                        len(
+                            remaining_tasks
+                        )
+                        - planned_count,
                     ),
-                },
-
-                "preferred_study_times": (
-                    preferred_periods
-                ),
-
-                "unscheduled_tasks": max(
-                    0,
-                    min(
-                        len(remaining_tasks),
-                        profile.daily_study_target,
-                    )
-                    - planned_count,
-                ),
             }
         )
