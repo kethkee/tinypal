@@ -1,16 +1,24 @@
 import {
   ArrowLeft,
   CalendarDays,
+  CheckCircle2,
   Clock3,
   Download,
+  Target,
 } from "lucide-react";
 
 import jsPDF from "jspdf";
 
-import { useEffect, useState } from "react";
+import {
+  useEffect,
+  useState,
+} from "react";
+
 import { Link } from "react-router-dom";
 
-import { getPlan } from "../services/profileService";
+import {
+  getPlan,
+} from "../services/profileService";
 
 import Button from "../ui/Button";
 import Card from "../ui/Card";
@@ -18,52 +26,82 @@ import Badge from "../ui/Badge";
 
 
 function Planner() {
-  const [plan, setPlan] = useState(null);
-  const [error, setError] = useState("");
-  const [downloading, setDownloading] = useState(false);
+
+  const [plan, setPlan] =
+    useState(null);
+
+  const [error, setError] =
+    useState("");
+
+  const [loading, setLoading] =
+    useState(true);
 
 
   useEffect(() => {
+
     let active = true;
+
 
     getPlan()
       .then((value) => {
+
         if (active) {
           setPlan(value);
         }
+
       })
       .catch((requestError) => {
-        console.error(requestError);
+
+        console.error(
+          requestError
+        );
 
         if (active) {
+
           setError(
-            "Your schedule could not be generated. Complete onboarding and try again."
+            requestError.response?.data?.detail ||
+              "Today's planner could not be loaded."
           );
+
         }
+
+      })
+      .finally(() => {
+
+        if (active) {
+          setLoading(false);
+        }
+
       });
+
 
     return () => {
       active = false;
     };
+
   }, []);
 
 
-  const downloadPlanner = () => {
-    if (!plan) return;
+  const downloadPlanner =
+    () => {
 
-    setDownloading(true);
+      if (!plan) return;
 
-    try {
-      const pdf = new jsPDF();
+
+      const pdf =
+        new jsPDF();
+
 
       let y = 20;
 
 
-      /*
-       * Title
-       */
       pdf.setFontSize(22);
-      pdf.setTextColor(30, 25, 55);
+
+      pdf.setTextColor(
+        40,
+        35,
+        70
+      );
 
       pdf.text(
         "TinyPal Planner",
@@ -74,26 +112,34 @@ function Planner() {
 
       y += 10;
 
+
       pdf.setFontSize(11);
-      pdf.setTextColor(100);
+
+      pdf.setTextColor(
+        100
+      );
 
       pdf.text(
-        plan.date || "Today's plan",
+        plan.date ||
+          "Today's plan",
         20,
         y
       );
 
 
-      /*
-       * Focus blocks
-       */
       y += 18;
 
-      pdf.setTextColor(30);
+
       pdf.setFontSize(15);
 
+      pdf.setTextColor(
+        40,
+        35,
+        70
+      );
+
       pdf.text(
-        "Focus blocks",
+        "Today's focus blocks",
         20,
         y
       );
@@ -101,10 +147,13 @@ function Planner() {
 
       y += 10;
 
+
       pdf.setFontSize(11);
 
 
-      if (!plan.blocks?.length) {
+      if (
+        !plan.blocks?.length
+      ) {
 
         pdf.text(
           "No focus blocks scheduled.",
@@ -116,46 +165,107 @@ function Planner() {
 
       } else {
 
-        plan.blocks.forEach((block) => {
+        plan.blocks.forEach(
+          (block) => {
 
-          if (y > 275) {
-            pdf.addPage();
-            y = 20;
+            if (y > 275) {
+
+              pdf.addPage();
+
+              y = 20;
+
+            }
+
+
+            pdf.text(
+              `${block.start} - ${block.end}`,
+              20,
+              y
+            );
+
+            pdf.text(
+              block.title,
+              65,
+              y
+            );
+
+            y += 8;
+
           }
+        );
 
-          pdf.setTextColor(90);
-
-          pdf.text(
-            `${block.start} - ${block.end}`,
-            20,
-            y
-          );
-
-          pdf.setTextColor(30);
-
-          pdf.text(
-            block.title,
-            65,
-            y
-          );
-
-          y += 8;
-
-        });
       }
 
 
-      /*
-       * Commitments
-       */
       y += 10;
 
+
       if (y > 260) {
+
         pdf.addPage();
+
         y = 20;
+
       }
 
-      pdf.setTextColor(30);
+
+      pdf.setFontSize(15);
+
+      pdf.text(
+        "Today's priorities",
+        20,
+        y
+      );
+
+
+      y += 10;
+
+      pdf.setFontSize(11);
+
+
+      if (
+        !plan.priorities?.length
+      ) {
+
+        pdf.text(
+          "No priorities selected.",
+          20,
+          y
+        );
+
+        y += 10;
+
+      } else {
+
+        plan.priorities.forEach(
+          (priority) => {
+
+            pdf.text(
+              `• ${priority}`,
+              20,
+              y
+            );
+
+            y += 8;
+
+          }
+        );
+
+      }
+
+
+      y += 10;
+
+
+      if (y > 260) {
+
+        pdf.addPage();
+
+        y = 20;
+
+      }
+
+
       pdf.setFontSize(15);
 
       pdf.text(
@@ -170,7 +280,9 @@ function Planner() {
       pdf.setFontSize(11);
 
 
-      if (!plan.commitments?.length) {
+      if (
+        !plan.commitments?.length
+      ) {
 
         pdf.text(
           "No recurring commitments.",
@@ -180,46 +292,30 @@ function Planner() {
 
       } else {
 
-        plan.commitments.forEach((item) => {
+        plan.commitments.forEach(
+          (item) => {
 
-          if (y > 275) {
-            pdf.addPage();
-            y = 20;
+            if (y > 275) {
+
+              pdf.addPage();
+
+              y = 20;
+
+            }
+
+
+            pdf.text(
+              `${item.day} · ${item.start}-${item.end} · ${item.title}`,
+              20,
+              y
+            );
+
+            y += 8;
+
           }
-
-          pdf.setTextColor(60);
-
-          pdf.text(
-            `${item.day} · ${item.start}-${item.end} · ${item.title}`,
-            20,
-            y
-          );
-
-          y += 8;
-
-        });
+        );
 
       }
-
-
-      /*
-       * Footer
-       */
-      y += 12;
-
-      if (y > 275) {
-        pdf.addPage();
-        y = 20;
-      }
-
-      pdf.setFontSize(9);
-      pdf.setTextColor(130);
-
-      pdf.text(
-        "Created with TinyPal",
-        20,
-        y
-      );
 
 
       pdf.save(
@@ -228,10 +324,7 @@ function Planner() {
           .slice(0, 10)}.pdf`
       );
 
-    } finally {
-      setDownloading(false);
-    }
-  };
+    };
 
 
   return (
@@ -239,7 +332,7 @@ function Planner() {
 
       <div className="mx-auto max-w-4xl px-5 py-10 sm:px-8">
 
-        {/* Back */}
+
         <Link
           to="/dashboard"
           className="inline-flex items-center gap-2 text-sm font-semibold text-indigo-600"
@@ -249,43 +342,42 @@ function Planner() {
         </Link>
 
 
-        {/* Header */}
         <header className="mt-8">
 
-          <div className="flex flex-col justify-between gap-5 sm:flex-row sm:items-end">
+          <p className="text-sm font-semibold uppercase tracking-wider text-indigo-500">
+            {plan?.date ||
+              "TODAY'S PLAN"}
+          </p>
+
+          <div className="mt-2 flex flex-col justify-between gap-5 sm:flex-row sm:items-end">
 
             <div>
 
-              <p className="text-sm font-semibold text-indigo-600">
-                {plan?.date?.toUpperCase() ||
-                  "TODAY'S PLAN"}
-              </p>
-
-              <h1 className="mt-2 text-3xl font-semibold tracking-tight text-gray-900">
-                A focused schedule, built for today.
+              <h1 className="text-3xl font-semibold tracking-tight text-gray-950">
+                Today's planner
               </h1>
 
               <p className="mt-3 max-w-2xl text-gray-500">
-                TinyPal has organized your tasks,
-                priorities, commitments, and preferred
-                study windows into a focused plan.
+                A focused schedule built around
+                today's tasks, your routine, and
+                recurring commitments.
               </p>
 
             </div>
 
 
             {plan && (
+
               <Button
                 variant="secondary"
-                onClick={downloadPlanner}
-                disabled={downloading}
+                onClick={
+                  downloadPlanner
+                }
               >
                 <Download size={16} />
-
-                {downloading
-                  ? "Preparing..."
-                  : "Download planner"}
+                Download planner
               </Button>
+
             )}
 
           </div>
@@ -293,54 +385,119 @@ function Planner() {
         </header>
 
 
-        {/* Error */}
-        {error && (
-          <p
-            role="alert"
-            className="mt-6 rounded-xl bg-red-50 p-4 text-sm text-red-700"
-          >
-            {error}
-          </p>
-        )}
+        {loading && (
 
-
-        {/* Loading */}
-        {!plan && !error && (
           <Card className="mt-8 p-8 text-center">
 
-            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-violet-50 text-violet-600">
-              <Clock3 size={22} />
-            </div>
+            <Clock3
+              size={22}
+              className="mx-auto animate-pulse text-indigo-500"
+            />
 
-            <h2 className="mt-5 font-semibold text-gray-900">
-              Preparing your schedule
-            </h2>
-
-            <p className="mt-2 text-sm text-gray-500">
-              TinyPal is finding space for the things
-              that matter today.
+            <p className="mt-4 text-gray-500">
+              Preparing today's schedule...
             </p>
 
           </Card>
+
         )}
 
 
-        {/* Generated planner */}
-        {plan && (
+        {!loading && error && (
+
+          <Card className="mt-8 p-8 text-center">
+
+            <p className="text-red-600">
+              {error}
+            </p>
+
+            <Link
+              to="/dashboard"
+              className="mt-5 inline-block"
+            >
+              <Button variant="secondary">
+                Back to dashboard
+              </Button>
+            </Link>
+
+          </Card>
+
+        )}
+
+
+        {!loading && plan && (
+
           <>
 
-            <p className="mt-5 text-sm text-gray-400">
-              Generated at {plan.generated_at}
-            </p>
+
+            {/* Summary */}
+
+            <section className="mt-7 grid gap-4 sm:grid-cols-3">
+
+              <Card className="p-5">
+
+                <CheckCircle2
+                  size={20}
+                  className="text-indigo-500"
+                />
+
+                <p className="mt-4 text-sm text-gray-500">
+                  Today's tasks
+                </p>
+
+                <p className="mt-1 text-2xl font-semibold text-gray-900">
+                  {plan.tasks?.length || 0}
+                </p>
+
+              </Card>
+
+
+              <Card className="p-5">
+
+                <Target
+                  size={20}
+                  className="text-violet-500"
+                />
+
+                <p className="mt-4 text-sm text-gray-500">
+                  Today's priorities
+                </p>
+
+                <p className="mt-1 text-2xl font-semibold text-gray-900">
+                  {plan.priorities?.length || 0}
+                </p>
+
+              </Card>
+
+
+              <Card className="p-5">
+
+                <Clock3
+                  size={20}
+                  className="text-indigo-500"
+                />
+
+                <p className="mt-4 text-sm text-gray-500">
+                  Generated
+                </p>
+
+                <p className="mt-1 text-2xl font-semibold text-gray-900">
+                  {plan.generated_at}
+                </p>
+
+              </Card>
+
+            </section>
 
 
             {/* Focus blocks */}
-            <Card className="mt-5 p-5 sm:p-6">
+
+            <Card className="mt-6 p-5 sm:p-6">
 
               <div className="flex items-center gap-2">
 
                 <Clock3
-                  size={18}
+                  size={19}
                   className="text-indigo-500"
                 />
 
@@ -355,39 +512,89 @@ function Planner() {
 
                 {plan.blocks?.length ? (
 
-                  plan.blocks.map((block) => (
+                  plan.blocks.map(
+                    (block) => (
 
-                    <div
-                      key={`${block.start}-${block.title}`}
-                      className="flex items-center gap-4 rounded-xl border border-indigo-100 bg-white p-4 transition hover:border-indigo-200 hover:shadow-sm"
-                    >
+                      <div
+                        key={`${block.start}-${block.title}`}
+                        className="flex items-center gap-4 rounded-2xl border border-indigo-100 p-4"
+                      >
 
-                      <p className="w-24 shrink-0 text-sm font-semibold text-indigo-600">
-                        {block.start}–{block.end}
-                      </p>
-
-
-                      <div className="min-w-0">
-
-                        <p className="font-medium text-gray-800">
-                          {block.title}
+                        <p className="w-24 shrink-0 text-sm font-semibold text-indigo-600">
+                          {block.start}–
+                          {block.end}
                         </p>
 
-                        <Badge className="mt-1">
-                          {block.category}
-                        </Badge>
+
+                        <div>
+
+                          <p className="font-medium text-gray-800">
+                            {block.title}
+                          </p>
+
+                          <Badge className="mt-1">
+                            {block.category}
+                          </Badge>
+
+                        </div>
 
                       </div>
 
-                    </div>
-
-                  ))
+                    )
+                  )
 
                 ) : (
 
                   <p className="py-5 text-sm text-gray-500">
-                    All caught up — add an incomplete task
-                    to generate focus blocks.
+                    No focus blocks are available yet.
+                    Add today's tasks to generate your schedule.
+                  </p>
+
+                )}
+
+              </div>
+
+            </Card>
+
+
+            {/* Priorities */}
+
+            <Card className="mt-6 p-5 sm:p-6">
+
+              <div className="flex items-center gap-2">
+
+                <Target
+                  size={19}
+                  className="text-violet-500"
+                />
+
+                <h2 className="font-semibold text-gray-900">
+                  Today's priorities
+                </h2>
+
+              </div>
+
+
+              <div className="mt-4 flex flex-wrap gap-2">
+
+                {plan.priorities?.length ? (
+
+                  plan.priorities.map(
+                    (priority) => (
+
+                      <Badge
+                        key={priority}
+                      >
+                        {priority}
+                      </Badge>
+
+                    )
+                  )
+
+                ) : (
+
+                  <p className="text-sm text-gray-500">
+                    No priorities selected.
                   </p>
 
                 )}
@@ -398,12 +605,13 @@ function Planner() {
 
 
             {/* Commitments */}
-            <Card className="mt-5 p-5 sm:p-6">
+
+            <Card className="mt-6 p-5 sm:p-6">
 
               <div className="flex items-center gap-2">
 
                 <CalendarDays
-                  size={18}
+                  size={19}
                   className="text-indigo-500"
                 />
 
@@ -420,13 +628,17 @@ function Planner() {
 
                   plan.commitments.map(
                     (item, index) => (
+
                       <p
-                        className="text-sm text-gray-600"
                         key={`${item.title}-${index}`}
+                        className="text-sm text-gray-600"
                       >
-                        {item.day} · {item.start}–
-                        {item.end} · {item.title}
+                        {item.day} ·{" "}
+                        {item.start}–
+                        {item.end} ·{" "}
+                        {item.title}
                       </p>
+
                     )
                   )
 
@@ -443,6 +655,7 @@ function Planner() {
             </Card>
 
           </>
+
         )}
 
       </div>

@@ -12,14 +12,21 @@ import {
 } from "lucide-react";
 
 import { useEffect, useState } from "react";
-import { Link, useLocation } from "react-router-dom";
+
+import {
+  Link,
+  useLocation,
+  useNavigate,
+} from "react-router-dom";
 
 import { useAuth } from "../context/AuthContext";
 
 import {
   addTask,
+  createTodayPlan,
   deleteTask,
   getProfile,
+  getTodayPlan,
   updateTask,
 } from "../services/profileService";
 
@@ -42,60 +49,82 @@ const categories = [
   "Other",
 ];
 
-
-const today = new Intl.DateTimeFormat(undefined, {
-  weekday: "long",
-  month: "long",
-  day: "numeric",
-});
+const todayFormatter = new Intl.DateTimeFormat(
+  undefined,
+  {
+    weekday: "long",
+    month: "long",
+    day: "numeric",
+  }
+);
 
 
 function Metric({ label, value, icon: Icon }) {
   return (
     <Card className="p-5">
-
       <div className="flex items-center justify-between">
-
         <div>
           <p className="text-sm text-gray-500">
             {label}
           </p>
 
-          <p className="mt-1 text-2xl font-semibold text-gray-900">
+          <p className="mt-2 text-2xl font-semibold text-gray-900">
             {value}
           </p>
         </div>
 
         <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-violet-50 text-violet-600">
-          <Icon size={21} />
+          <Icon size={20} />
         </div>
-
       </div>
-
     </Card>
   );
 }
 
 
+function ConfettiCelebration() {
+  const pieces = Array.from(
+    { length: 36 },
+    (_, index) => index
+  );
+
+  return (
+    <div
+      className="pointer-events-none fixed inset-0 z-[60] overflow-hidden"
+      aria-hidden="true"
+    >
+      {pieces.map((piece) => (
+        <span
+          key={piece}
+          className="absolute top-[-20px] h-3 w-2 animate-[tinypal-confetti_2.8s_ease-out_forwards] rounded-sm"
+          style={{
+            left: `${(piece * 37) % 100}%`,
+            animationDelay: `${(piece % 9) * 70}ms`,
+            transform: `rotate(${piece * 31}deg)`,
+          }}
+        />
+      ))}
+    </div>
+  );
+}
+
+
 function Dashboard() {
-
   const { user, logout } = useAuth();
-
   const location = useLocation();
-
+  const navigate = useNavigate();
 
   const [profile, setProfile] = useState(null);
+  const [todayPlan, setTodayPlan] = useState(null);
 
   const [loading, setLoading] = useState(true);
+  const [creatingPlan, setCreatingPlan] = useState(false);
 
   const [error, setError] = useState("");
 
   const [modal, setModal] = useState(false);
-
   const [editingId, setEditingId] = useState(null);
-
   const [saving, setSaving] = useState(false);
-
 
   const [showPlannerHint, setShowPlannerHint] =
     useState(
@@ -106,6 +135,8 @@ function Dashboard() {
         ) === "true"
     );
 
+  const [showCelebration, setShowCelebration] =
+    useState(false);
 
   const [form, setForm] = useState({
     title: "",
@@ -113,90 +144,263 @@ function Dashboard() {
   });
 
 
-  /*
-   * Load profile
-   */
-  useEffect(() => {
+  /* --------------------------------
+     LOAD PROFILE + TODAY'S PLAN
+  -------------------------------- */
 
+  useEffect(() => {
     let active = true;
 
-    getProfile()
-      .then((value) => {
+    const loadDashboard = async () => {
+      try {
+        const savedProfile = await getProfile();
 
-        if (active) {
-          setProfile(value);
+        if (!active) {
+          return;
         }
 
-      })
-      .catch(() => {
+        setProfile(savedProfile);
+
+        try {
+          const plan = await getTodayPlan();
+
+          if (active) {
+            setTodayPlan(plan);
+          }
+
+        } catch (planError) {
+          console.error(
+            "Today's plan could not be loaded:",
+            planError.response?.data || planError
+          );
+
+          if (
+            planError.response?.status === 404
+          ) {
+            if (active) {
+              setTodayPlan(null);
+            }
+          } else {
+            throw planError;
+          }
+        }
+
+      } catch (requestError) {
+        console.error(
+          "Dashboard loading failed:",
+          requestError.response?.data ||
+            requestError
+        );
 
         if (active) {
           setError(
-            "We could not load your plan. Please refresh and try again."
+            requestError.response?.data?.detail ||
+              "We could not load your workspace. Please refresh and try again."
           );
         }
 
-      })
-      .finally(() => {
-
+      } finally {
         if (active) {
           setLoading(false);
         }
+      }
+    };
 
-      });
-
+    loadDashboard();
 
     return () => {
       active = false;
     };
-
   }, []);
 
 
-  /*
-   * Persist planner hint after onboarding
-   */
+  /* --------------------------------
+     PLANNER HINT
+  -------------------------------- */
+
   useEffect(() => {
-
     if (location.state?.showPlannerHint) {
-
       sessionStorage.setItem(
         "tinypal_show_planner_hint",
         "true"
       );
 
       setShowPlannerHint(true);
-
     }
-
   }, [location.state]);
 
 
-  /*
-   * Close task modal
-   */
-  const close = () => {
+  /* --------------------------------
+     TODAY'S DATA
+  -------------------------------- */
 
-    if (saving) return;
+  const tasks = todayPlan?.tasks || [];
+
+  const priorities =
+    todayPlan?.priorities || [];
+
+  const completed = tasks.filter(
+    (task) => task.completed
+  ).length;
+
+  const allTasksCompleted =
+    tasks.length > 0 &&
+    completed === tasks.length;
+
+
+  /* --------------------------------
+     CONFETTI
+  -------------------------------- */
+
+  useEffect(() => {
+    if (!allTasksCompleted) {
+      return;
+    }
+
+    setShowCelebration(true);
+
+    const timer = setTimeout(() => {
+      setShowCelebration(false);
+    }, 4200);
+
+    return () => clearTimeout(timer);
+  }, [allTasksCompleted]);
+
+
+  /* --------------------------------
+     STUDY WINDOWS
+  -------------------------------- */
+
+  const preferredStudyTimes =
+    profile?.preferred_study_times?.length
+      ? profile.preferred_study_times
+      : profile?.preferred_study_time
+        ? [profile.preferred_study_time]
+        : [];
+
+
+  const displayName =
+    user?.split("@")[0] || "there";
+
+
+  /* --------------------------------
+     LOGOUT
+  -------------------------------- */
+
+  const handleLogout = async () => {
+    try {
+      await logout();
+    } catch (logoutError) {
+      console.error(
+        "Logout failed:",
+        logoutError
+      );
+    } finally {
+      localStorage.removeItem("access");
+      localStorage.removeItem("refresh");
+      localStorage.removeItem("user_email");
+
+      sessionStorage.removeItem(
+        "tinypal_show_planner_hint"
+      );
+
+      navigate("/", {
+        replace: true,
+      });
+    }
+  };
+
+
+  /* --------------------------------
+     CREATE TODAY'S PLAN
+  -------------------------------- */
+
+  const handleCreateToday = async () => {
+    setCreatingPlan(true);
+    setError("");
+
+    const accessToken =
+      localStorage.getItem("access");
+
+    if (!accessToken) {
+      setError(
+        "Your login session has expired. Please log in again."
+      );
+
+      setCreatingPlan(false);
+
+      navigate("/", {
+        replace: true,
+      });
+
+      return;
+    }
+
+    try {
+      const plan =
+        await createTodayPlan({
+          tasks: [],
+          priorities: [],
+        });
+
+      setTodayPlan(plan);
+
+      /*
+       * Keep the loading screen visible
+       * long enough for the user to understand
+       * that TinyPal is creating their planner.
+       */
+      setTimeout(() => {
+        sessionStorage.setItem(
+          "tinypal_show_planner_hint",
+          "true"
+        );
+
+        setCreatingPlan(false);
+        setShowPlannerHint(true);
+      }, 2200);
+
+    } catch (requestError) {
+      console.error(
+        "Create today's plan failed:",
+        requestError.response?.data ||
+          requestError
+      );
+
+      setError(
+        requestError.response?.data?.detail ||
+          requestError.response?.data?.message ||
+          "Today's plan could not be created. Please try again."
+      );
+
+      setCreatingPlan(false);
+    }
+  };
+
+
+  /* --------------------------------
+     TASK MODAL
+  -------------------------------- */
+
+  const close = () => {
+    if (saving) {
+      return;
+    }
 
     setModal(false);
-
     setEditingId(null);
 
     setForm({
       title: "",
       category: "Assignment",
     });
-
   };
 
 
-  /*
-   * Open add/edit modal
-   */
   const open = (task = null) => {
-
-    setEditingId(task?.id || null);
+    setEditingId(
+      task?.id || null
+    );
 
     setForm(
       task
@@ -211,205 +415,192 @@ function Dashboard() {
     );
 
     setModal(true);
-
   };
 
 
-  /*
-   * Add / edit task
-   */
-  const submit = async (event) => {
+  /* --------------------------------
+     ADD / EDIT TASK
+  -------------------------------- */
 
+  const submit = async (event) => {
     event.preventDefault();
 
-    if (!form.title.trim()) return;
+    if (!form.title.trim()) {
+      return;
+    }
 
     setSaving(true);
-
     setError("");
 
-
     try {
-
       const payload = {
         ...form,
         title: form.title.trim(),
       };
 
+      let result;
 
-      const result = editingId
-        ? await updateTask(editingId, payload)
-        : await addTask(payload);
+      if (editingId) {
+        result = await updateTask(
+          editingId,
+          payload
+        );
+      } else {
+        result = await addTask(payload);
+      }
 
-
-      setProfile((current) => {
-
-        if (!current) return current;
-
-
-        if (editingId) {
-
-          return {
-            ...current,
-
-            tasks: current.tasks.map((task) =>
-              task.id === result.id
-                ? result
-                : task
-            ),
-          };
-
+      setTodayPlan((current) => {
+        if (!current) {
+          return current;
         }
 
+        if (editingId) {
+          return {
+            ...current,
+            tasks: current.tasks.map(
+              (task) =>
+                task.id === result.id
+                  ? result
+                  : task
+            ),
+          };
+        }
 
         return {
           ...current,
-
           tasks: [
             ...current.tasks,
             result,
           ],
         };
-
       });
-
 
       close();
 
     } catch (requestError) {
-
-      console.error(requestError);
+      console.error(
+        "Task operation failed:",
+        requestError.response?.data ||
+          requestError
+      );
 
       setError(
-        `Task could not be ${
-          editingId ? "updated" : "added"
-        }. Please try again.`
+        requestError.response?.data?.detail ||
+          `Task could not be ${
+            editingId
+              ? "updated"
+              : "added"
+          }. Please try again.`
       );
 
     } finally {
-
       setSaving(false);
-
     }
-
   };
 
 
-  /*
-   * Complete / uncomplete task
-   */
+  /* --------------------------------
+     COMPLETE TASK
+  -------------------------------- */
+
   const toggle = async (task) => {
-
     try {
+      const result =
+        await updateTask(
+          task.id,
+          {
+            completed:
+              !task.completed,
+          }
+        );
 
-      const result = await updateTask(
-        task.id,
-        {
-          completed: !task.completed,
+      setTodayPlan((current) => {
+        if (!current) {
+          return current;
         }
-      );
-
-
-      setProfile((current) => {
-
-        if (!current) return current;
 
         return {
           ...current,
-
-          tasks: current.tasks.map((item) =>
-            item.id === result.id
-              ? result
-              : item
-          ),
+          tasks:
+            current.tasks.map(
+              (item) =>
+                item.id === result.id
+                  ? result
+                  : item
+            ),
         };
-
       });
 
     } catch (requestError) {
-
-      console.error(requestError);
-
-      setError(
-        "Task status could not be updated."
+      console.error(
+        "Task status update failed:",
+        requestError.response?.data ||
+          requestError
       );
 
+      setError(
+        requestError.response?.data?.detail ||
+          "Task status could not be updated."
+      );
     }
-
   };
 
 
-  /*
-   * Delete task
-   */
+  /* --------------------------------
+     DELETE TASK
+  -------------------------------- */
+
   const remove = async (id) => {
-
     try {
-
       await deleteTask(id);
 
-
-      setProfile((current) => {
-
-        if (!current) return current;
+      setTodayPlan((current) => {
+        if (!current) {
+          return current;
+        }
 
         return {
           ...current,
-
-          tasks: current.tasks.filter(
-            (task) => task.id !== id
-          ),
+          tasks:
+            current.tasks.filter(
+              (task) =>
+                task.id !== id
+            ),
         };
-
       });
 
     } catch (requestError) {
-
-      console.error(requestError);
-
-      setError(
-        "Task could not be deleted."
+      console.error(
+        "Task deletion failed:",
+        requestError.response?.data ||
+          requestError
       );
 
+      setError(
+        requestError.response?.data?.detail ||
+          "Task could not be deleted."
+      );
     }
-
   };
 
 
-  const tasks = profile?.tasks || [];
+  /* --------------------------------
+     LOADING
+  -------------------------------- */
 
-  const completed = tasks.filter(
-    (task) => task.completed
-  ).length;
-
-
-  const preferredStudyTimes =
-    profile?.preferred_study_times?.length
-      ? profile.preferred_study_times
-      : profile?.preferred_study_time
-        ? [profile.preferred_study_time]
-        : [];
-
-
-  const displayName =
-    user?.split("@")[0] || "there";
-
-
-  /*
-   * Loading state
-   */
   if (loading) {
-
     return (
       <main className="tiny-page flex min-h-screen items-center justify-center px-6">
 
         <Card className="w-full max-w-md p-10 text-center">
 
           <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-violet-50 text-violet-600">
+
             <Clock3
               size={22}
               className="animate-pulse"
             />
+
           </div>
 
           <h1 className="mt-5 text-xl font-semibold text-gray-900">
@@ -424,17 +615,98 @@ function Dashboard() {
 
       </main>
     );
-
   }
 
+
+  /* --------------------------------
+     PLANNER GENERATION SCREEN
+  -------------------------------- */
+
+  if (creatingPlan) {
+    return (
+      <main className="tiny-page flex min-h-screen items-center justify-center px-6">
+
+        <section className="relative w-full max-w-xl text-center">
+
+          <span className="absolute left-[18%] top-4 animate-pulse text-2xl text-violet-400">
+            ✦
+          </span>
+
+          <span className="absolute right-[18%] top-10 animate-pulse text-xl text-indigo-400">
+            ✧
+          </span>
+
+          <span className="absolute left-[28%] top-32 animate-pulse text-sm text-violet-300">
+            ✦
+          </span>
+
+          <span className="absolute right-[27%] top-36 animate-pulse text-sm text-indigo-300">
+            ✧
+          </span>
+
+
+          <div className="relative mx-auto flex h-24 w-24 items-center justify-center">
+
+            <div className="absolute inset-0 animate-ping rounded-[2rem] bg-violet-200/40" />
+
+            <div className="relative flex h-20 w-20 items-center justify-center rounded-[1.7rem] border border-violet-200 bg-white text-violet-600 shadow-xl shadow-violet-100">
+
+              <CalendarDays size={32} />
+
+            </div>
+
+          </div>
+
+
+          <h1 className="mt-10 text-3xl font-semibold tracking-tight text-gray-950">
+            Working on your planner
+          </h1>
+
+
+          <p className="mx-auto mt-4 max-w-md text-sm leading-6 text-gray-500">
+            TinyPal is organizing your tasks,
+            priorities, commitments, and study
+            windows into a plan that fits your day.
+          </p>
+
+
+          <div className="mt-8 flex justify-center gap-2">
+
+            <span className="h-2.5 w-2.5 animate-bounce rounded-full bg-violet-400" />
+
+            <span className="h-2.5 w-2.5 animate-bounce rounded-full bg-violet-400 [animation-delay:150ms]" />
+
+            <span className="h-2.5 w-2.5 animate-bounce rounded-full bg-violet-400 [animation-delay:300ms]" />
+
+          </div>
+
+
+          <p className="mt-5 text-xs font-medium uppercase tracking-[0.2em] text-violet-400">
+            Creating today's plan
+          </p>
+
+        </section>
+
+      </main>
+    );
+  }
+
+
+  /* --------------------------------
+     MAIN DASHBOARD
+  -------------------------------- */
 
   return (
     <main className="tiny-page min-h-screen">
 
+      {showCelebration && (
+        <ConfettiCelebration />
+      )}
+
+
       <div className="mx-auto max-w-6xl px-5 py-8 sm:px-8 lg:py-10">
 
-
-        {/* ================= HEADER ================= */}
+        {/* HEADER */}
 
         <header className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
 
@@ -445,36 +717,39 @@ function Dashboard() {
             </p>
 
             <p className="mt-2 text-sm font-medium text-gray-400">
-              {today.format(new Date()).toUpperCase()}
+              {todayFormatter
+                .format(new Date())
+                .toUpperCase()}
             </p>
 
             <h1 className="mt-2 text-3xl font-semibold tracking-tight text-gray-950 sm:text-4xl">
               Welcome back, {displayName}.
             </h1>
 
-            <p className="mt-2 max-w-xl text-gray-500">
-              A calm view of everything that matters.
+            <p className="mt-2 text-gray-500">
+              A calm view of what matters today.
             </p>
 
           </div>
 
 
-          <div className="flex flex-wrap items-center gap-3">
+          <div className="flex flex-wrap gap-2">
+
+            {todayPlan && (
+              <Button
+                onClick={() => open()}
+              >
+                <Plus size={17} />
+                Add task
+              </Button>
+            )}
+
 
             <Button
               variant="secondary"
-              onClick={() => open()}
+              onClick={handleLogout}
             >
-              <Plus size={17} />
-              Add task
-            </Button>
-
-
-            <Button
-              variant="secondary"
-              onClick={logout}
-            >
-              <LogOut size={17} />
+              <LogOut size={16} />
               Log out
             </Button>
 
@@ -483,504 +758,507 @@ function Dashboard() {
         </header>
 
 
-        {/* ================= ERROR ================= */}
+        {/* ERROR */}
 
         {error && (
-
           <div
             role="alert"
-            className="mt-6 flex items-start justify-between gap-4 rounded-2xl border border-red-100 bg-red-50 p-4 text-sm text-red-700"
+            className="mt-6 rounded-2xl border border-red-100 bg-red-50 p-4 text-sm text-red-700"
           >
-
-            <p>{error}</p>
-
-            <button
-              type="button"
-              onClick={() => setError("")}
-              className="shrink-0 text-red-400 hover:text-red-700"
-              aria-label="Dismiss error"
-            >
-              <X size={17} />
-            </button>
-
+            {error}
           </div>
-
         )}
 
 
-        {/* ================= PLANNER PROMPT ================= */}
+        {/* NO PLAN */}
 
-        {showPlannerHint && (
+        {!todayPlan && (
+          <Card className="mt-8 overflow-hidden p-8 sm:p-12">
 
-          <div className="mt-7 rounded-3xl border border-violet-100 bg-gradient-to-r from-violet-50/80 to-indigo-50/80 p-5 shadow-sm">
+            <div className="mx-auto max-w-xl text-center">
 
-            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+              <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-3xl bg-violet-50 text-violet-600">
 
-              <div>
-
-                <div className="flex items-center gap-2">
-
-                  <Sparkles
-                    size={17}
-                    className="text-violet-500"
-                  />
-
-                  <p className="font-semibold text-gray-900">
-                    Your planner is ready
-                  </p>
-
-                </div>
-
-                <p className="mt-1 text-sm text-gray-500">
-                  TinyPal has created a schedule around
-                  your tasks and preferred study windows.
-                </p>
+                <CalendarDays size={28} />
 
               </div>
 
 
-              <div className="relative shrink-0">
-
-                <span className="pointer-events-none absolute -inset-2 animate-pulse rounded-2xl border border-violet-300" />
-
-                <span className="pointer-events-none absolute -right-3 -top-3 animate-pulse text-violet-500">
-                  ✦
-                </span>
-
-                <span className="pointer-events-none absolute -bottom-3 -left-3 animate-pulse text-indigo-400">
-                  ✧
-                </span>
-
-
-                <Link
-                  to="/planner"
-                  onClick={() => {
-
-                    setShowPlannerHint(false);
-
-                    sessionStorage.removeItem(
-                      "tinypal_show_planner_hint"
-                    );
-
-                  }}
-                >
-
-                  <Button>
-                    View my planner
-                  </Button>
-
-                </Link>
-
-              </div>
-
-            </div>
-
-          </div>
-
-        )}
-
-
-        {/* ================= METRICS ================= */}
-
-        <section className="mt-7 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-
-          <Metric
-            label="Daily study target"
-            value={`${profile?.daily_study_target || 0}h`}
-            icon={Clock3}
-          />
-
-
-          <Metric
-            label="Tasks completed"
-            value={`${completed} / ${tasks.length}`}
-            icon={CheckCircle2}
-          />
-
-
-          <Metric
-            label="Priorities"
-            value={profile?.priorities?.length || 0}
-            icon={Target}
-          />
-
-        </section>
-
-
-        {/* ================= MAIN GRID ================= */}
-
-        <section className="mt-7 grid gap-6 lg:grid-cols-[1.5fr_1fr]">
-
-
-          {/* ================= TASKS ================= */}
-
-          <Card className="p-5 sm:p-6">
-
-            <div className="flex items-start justify-between gap-4">
-
-              <div>
-
-                <div className="flex items-center gap-2">
-
-                  <CheckCircle2
-                    size={19}
-                    className="text-indigo-500"
-                  />
-
-                  <h2 className="text-lg font-semibold text-gray-900">
-                    Tasks
-                  </h2>
-
-                </div>
-
-                <p className="mt-1 text-sm text-gray-500">
-                  Your saved work, ready when you are.
-                </p>
-
-              </div>
-
-
-              <Badge>
-                {tasks.length}{" "}
-                {tasks.length === 1
-                  ? "task"
-                  : "tasks"}
-              </Badge>
-
-            </div>
-
-
-            <div className="mt-6 space-y-2">
-
-              {tasks.length ? (
-
-                tasks.map((task) => (
-
-                  <div
-                    key={task.id}
-                    className={`group flex items-center gap-3 rounded-2xl border p-3 transition ${
-                      task.completed
-                        ? "border-gray-100 bg-gray-50/70"
-                        : "border-gray-100 bg-white hover:border-indigo-100 hover:shadow-sm"
-                    }`}
-                  >
-
-                    {/* Completion */}
-                    <button
-                      type="button"
-                      onClick={() => toggle(task)}
-                      className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-md border-2 transition ${
-                        task.completed
-                          ? "border-indigo-500 bg-indigo-500 text-white"
-                          : "border-indigo-200 hover:border-indigo-400"
-                      }`}
-                      aria-label={
-                        task.completed
-                          ? `Mark ${task.title} incomplete`
-                          : `Mark ${task.title} complete`
-                      }
-                    >
-
-                      {task.completed && (
-                        <CheckCircle2 size={14} />
-                      )}
-
-                    </button>
-
-
-                    {/* Task content */}
-                    <button
-                      type="button"
-                      onClick={() => toggle(task)}
-                      className="min-w-0 flex-1 text-left"
-                    >
-
-                      <p
-                        className={`truncate text-sm font-medium ${
-                          task.completed
-                            ? "text-gray-400 line-through"
-                            : "text-gray-700"
-                        }`}
-                      >
-                        {task.title}
-                      </p>
-
-                      <div className="mt-1">
-                        <Badge>
-                          {task.category}
-                        </Badge>
-                      </div>
-
-                    </button>
-
-
-                    {/* Edit */}
-                    <Button
-                      variant="ghost"
-                      onClick={() => open(task)}
-                      className="min-h-9 px-2 opacity-70 transition group-hover:opacity-100"
-                      aria-label={`Edit ${task.title}`}
-                    >
-                      <Pencil size={15} />
-                    </Button>
-
-
-                    {/* Delete */}
-                    <Button
-                      variant="danger"
-                      onClick={() => remove(task.id)}
-                      className="min-h-9 px-2"
-                      aria-label={`Delete ${task.title}`}
-                    >
-                      <Trash2 size={15} />
-                    </Button>
-
-                  </div>
-
-                ))
-
-              ) : (
-
-                <div className="rounded-2xl border border-dashed border-indigo-100 bg-indigo-50/30 p-8 text-center">
-
-                  <p className="font-medium text-gray-700">
-                    No tasks yet.
-                  </p>
-
-                  <p className="mt-1 text-sm text-gray-400">
-                    Add your first task and TinyPal will
-                    make space for it.
-                  </p>
-
-                  <Button
-                    className="mt-5"
-                    onClick={() => open()}
-                  >
-                    <Plus size={16} />
-                    Add your first task
-                  </Button>
-
-                </div>
-
-              )}
+              <h2 className="mt-7 text-2xl font-semibold text-gray-950">
+                What would you like to make time for today?
+              </h2>
+
+
+              <p className="mt-3 text-gray-500">
+                Your daily plan is fresh each day.
+                Your routine and recurring commitments
+                stay saved, while today's tasks and
+                priorities start from a clean slate.
+              </p>
+
+
+              <Button
+                className="mt-7"
+                onClick={handleCreateToday}
+                disabled={creatingPlan}
+              >
+                <Sparkles size={17} />
+
+                Create today's plan
+              </Button>
 
             </div>
 
           </Card>
+        )}
 
 
-          {/* ================= SIDE PANEL ================= */}
+        {/* TODAY'S PLAN */}
 
-          <div className="space-y-6">
+        {todayPlan && (
+          <>
+
+            <section className="mt-7 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+
+              <Metric
+                label="Daily study target"
+                value={`${profile?.daily_study_target || 0}h`}
+                icon={Clock3}
+              />
+
+              <Metric
+                label="Today's tasks"
+                value={`${completed} / ${tasks.length}`}
+                icon={CheckCircle2}
+              />
+
+              <Metric
+                label="Today's priorities"
+                value={priorities.length}
+                icon={Target}
+              />
+
+              <Metric
+                label="Commitments"
+                value={
+                  profile?.commitments?.length ||
+                  0
+                }
+                icon={CalendarDays}
+              />
+
+            </section>
 
 
-            {/* Priorities */}
+            {allTasksCompleted && (
+              <Card className="mt-6 border-violet-200 bg-violet-50/70 p-5">
 
-            <Card className="p-5 sm:p-6">
+                <div className="flex items-center gap-3">
 
-              <div className="flex items-center gap-2">
+                  <Sparkles
+                    size={21}
+                    className="text-violet-600"
+                  />
 
-                <Target
-                  size={19}
-                  className="text-violet-500"
-                />
+                  <div>
 
-                <h2 className="font-semibold text-gray-900">
-                  Priorities
-                </h2>
+                    <p className="font-semibold text-violet-950">
+                      Everything on today's list is done.
+                    </p>
 
-              </div>
+                    <p className="mt-1 text-sm text-violet-700">
+                      Nice work. You made space for what mattered today.
+                    </p>
+
+                  </div>
+
+                </div>
+
+              </Card>
+            )}
 
 
-              {profile?.priorities?.length ? (
+            <section className="mt-7 grid gap-6 lg:grid-cols-[1.5fr_1fr]">
 
-                <div className="mt-5 flex flex-wrap gap-2">
+              {/* TASKS */}
 
-                  {profile.priorities.map(
-                    (priority) => (
+              <Card className="p-5 sm:p-6">
 
-                      <Badge key={priority}>
-                        {priority}
-                      </Badge>
+                <div className="flex items-start justify-between gap-4">
 
-                    )
+                  <div>
+
+                    <h2 className="font-semibold text-gray-900">
+                      Today's tasks
+                    </h2>
+
+                    <p className="mt-1 text-sm text-gray-500">
+                      Only today's work appears here.
+                    </p>
+
+                  </div>
+
+                  <Badge>
+                    {tasks.length}{" "}
+                    {tasks.length === 1
+                      ? "task"
+                      : "tasks"}
+                  </Badge>
+
+                </div>
+
+
+                <div className="mt-5 space-y-2">
+
+                  {tasks.length ? (
+
+                    tasks.map((task) => (
+
+                      <div
+                        key={task.id}
+                        className={`group flex items-center gap-3 rounded-2xl border p-3 transition ${
+                          task.completed
+                            ? "border-gray-100 bg-gray-50"
+                            : "border-gray-100 bg-white hover:border-indigo-100 hover:shadow-sm"
+                        }`}
+                      >
+
+                        <button
+                          type="button"
+                          onClick={() =>
+                            toggle(task)
+                          }
+                          className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-md border-2 ${
+                            task.completed
+                              ? "border-indigo-500 bg-indigo-500 text-white"
+                              : "border-indigo-200"
+                          }`}
+                        >
+
+                          {task.completed && (
+                            <CheckCircle2 size={13} />
+                          )}
+
+                        </button>
+
+
+                        <div className="min-w-0 flex-1">
+
+                          <p
+                            className={`text-sm font-medium ${
+                              task.completed
+                                ? "text-gray-400 line-through"
+                                : "text-gray-700"
+                            }`}
+                          >
+                            {task.title}
+                          </p>
+
+                          <Badge className="mt-1.5">
+                            {task.category}
+                          </Badge>
+
+                        </div>
+
+
+                        <Button
+                          variant="ghost"
+                          onClick={() =>
+                            open(task)
+                          }
+                          className="min-h-9 px-2"
+                        >
+                          <Pencil size={15} />
+                        </Button>
+
+
+                        <Button
+                          variant="danger"
+                          onClick={() =>
+                            remove(task.id)
+                          }
+                          className="min-h-9 px-2"
+                        >
+                          <Trash2 size={15} />
+                        </Button>
+
+                      </div>
+
+                    ))
+
+                  ) : (
+
+                    <div className="rounded-2xl border border-dashed border-indigo-100 bg-indigo-50/30 p-8 text-center">
+
+                      <p className="font-medium text-gray-700">
+                        Your list is empty.
+                      </p>
+
+                      <p className="mt-1 text-sm text-gray-400">
+                        Add the things you want to make time for today.
+                      </p>
+
+                      <Button
+                        className="mt-5"
+                        onClick={() =>
+                          open()
+                        }
+                      >
+                        <Plus size={16} />
+                        Add today's first task
+                      </Button>
+
+                    </div>
+
                   )}
 
                 </div>
 
-              ) : (
-
-                <p className="mt-4 text-sm text-gray-400">
-                  No priorities selected yet.
-                </p>
-
-              )}
-
-            </Card>
+              </Card>
 
 
-            {/* Study rhythm */}
+              {/* RIGHT SIDE */}
 
-            <Card className="p-5 sm:p-6">
+              <div className="space-y-6">
 
-              <div className="flex items-center gap-2">
+                {/* PRIORITIES */}
 
-                <Clock3
-                  size={19}
-                  className="text-indigo-500"
-                />
+                <Card className="p-5 sm:p-6">
 
-                <h2 className="font-semibold text-gray-900">
-                  Your rhythm
-                </h2>
+                  <div className="flex items-center gap-2">
 
-              </div>
+                    <Target
+                      size={19}
+                      className="text-violet-500"
+                    />
 
+                    <h2 className="font-semibold text-gray-900">
+                      Today's priorities
+                    </h2>
 
-              <p className="mt-4 text-sm leading-6 text-gray-600">
-                Preferred study windows:
-              </p>
-
-
-              <div className="mt-3 flex flex-wrap gap-2">
-
-                {preferredStudyTimes.length ? (
-
-                  preferredStudyTimes.map(
-                    (item) => (
-
-                      <Badge key={item}>
-
-                        {item
-                          .charAt(0)
-                          .toUpperCase() +
-                          item.slice(1)}
-
-                      </Badge>
-
-                    )
-                  )
-
-                ) : (
-
-                  <span className="text-sm text-gray-400">
-                    No study window selected.
-                  </span>
-
-                )}
-
-              </div>
+                  </div>
 
 
-              <div className="mt-5 space-y-2 text-sm text-gray-500">
+                  {priorities.length ? (
 
-                <p>
-                  Wake up:{" "}
-                  <span className="font-medium text-gray-700">
-                    {profile?.wake_up_time || "—"}
-                  </span>
-                </p>
+                    <div className="mt-4 flex flex-wrap gap-2">
 
-                <p>
-                  Sleep:{" "}
-                  <span className="font-medium text-gray-700">
-                    {profile?.sleep_time || "—"}
-                  </span>
-                </p>
+                      {priorities.map(
+                        (priority) => (
+                          <Badge key={priority}>
+                            {priority}
+                          </Badge>
+                        )
+                      )}
 
-                <p>
-                  Daily target:{" "}
-                  <span className="font-medium text-gray-700">
-                    {profile?.daily_study_target || 0} hours
-                  </span>
-                </p>
+                    </div>
 
-                <p>
-                  Breaks:{" "}
-                  <span className="font-medium text-gray-700">
-                    {profile?.break_duration || 0} minutes
-                  </span>
-                </p>
+                  ) : (
 
-              </div>
+                    <p className="mt-4 text-sm text-gray-400">
+                      No priorities selected for today.
+                    </p>
 
-            </Card>
+                  )}
+
+                </Card>
 
 
-            {/* Planner card */}
+                {/* RHYTHM */}
 
-            <Card
-              className={`relative overflow-hidden p-5 sm:p-6 ${
-                showPlannerHint
-                  ? "border-violet-200 shadow-[0_10px_40px_rgba(124,58,237,0.12)]"
-                  : ""
-              }`}
-            >
+                <Card className="p-5 sm:p-6">
 
-              {showPlannerHint && (
+                  <div className="flex items-center gap-2">
 
-                <>
+                    <Clock3
+                      size={19}
+                      className="text-indigo-500"
+                    />
 
-                  <span className="pointer-events-none absolute -inset-[1px] animate-pulse rounded-2xl border border-violet-300" />
+                    <h2 className="font-semibold text-gray-900">
+                      Your rhythm
+                    </h2>
 
-                  <Sparkles
-                    size={18}
-                    className="absolute right-4 top-4 animate-pulse text-violet-500"
+                  </div>
+
+
+                  <p className="mt-4 text-sm text-gray-500">
+                    Preferred study windows
+                  </p>
+
+
+                  <div className="mt-3 flex flex-wrap gap-2">
+
+                    {preferredStudyTimes.map(
+                      (item) => (
+                        <Badge key={item}>
+                          {item
+                            .charAt(0)
+                            .toUpperCase() +
+                            item.slice(1)}
+                        </Badge>
+                      )
+                    )}
+
+                  </div>
+
+
+                  <div className="mt-5 space-y-2 text-sm text-gray-500">
+
+                    <p>
+                      Wake-up:{" "}
+                      <span className="font-medium text-gray-700">
+                        {profile?.wake_up_time || "—"}
+                      </span>
+                    </p>
+
+                    <p>
+                      Sleep:{" "}
+                      <span className="font-medium text-gray-700">
+                        {profile?.sleep_time || "—"}
+                      </span>
+                    </p>
+
+                    <p>
+                      Daily target:{" "}
+                      <span className="font-medium text-gray-700">
+                        {profile?.daily_study_target || 0} hours
+                      </span>
+                    </p>
+
+                    <p>
+                      Breaks:{" "}
+                      <span className="font-medium text-gray-700">
+                        {profile?.break_duration || 0} minutes
+                      </span>
+                    </p>
+
+                  </div>
+
+
+                  <Link
+                    to="/onboarding?edit=true"
+                    className="mt-5 inline-flex text-sm font-semibold text-indigo-600"
+                  >
+                    Adjust routine
+                  </Link>
+
+                </Card>
+
+
+                {/* PLANNER CARD */}
+
+                <Card
+                  className={`relative overflow-hidden p-5 sm:p-6 transition-all duration-500 ${
+                    showPlannerHint
+                      ? "border-violet-300 shadow-[0_12px_45px_rgba(124,58,237,0.18)]"
+                      : ""
+                  }`}
+                >
+
+                  {showPlannerHint && (
+                    <>
+                      {/* Animated ring */}
+
+                      <span className="pointer-events-none absolute -inset-2 animate-pulse rounded-2xl border-2 border-violet-300" />
+
+
+                      {/* Outer glow */}
+
+                      <span className="pointer-events-none absolute -inset-4 animate-pulse rounded-3xl bg-violet-400/5" />
+
+
+                      {/* Sparkles */}
+
+                      <span className="pointer-events-none absolute -right-4 -top-4 animate-pulse text-lg text-violet-500">
+                        ✦
+                      </span>
+
+                      <span className="pointer-events-none absolute -bottom-3 -left-3 animate-pulse text-sm text-indigo-400">
+                        ✧
+                      </span>
+
+                      <span className="pointer-events-none absolute -right-3 bottom-0 animate-pulse text-xs text-violet-300">
+                        ✦
+                      </span>
+                    </>
+                  )}
+
+
+                  <CalendarDays
+                    size={20}
+                    className="text-indigo-500"
                   />
 
-                </>
 
-              )}
-
-
-              <CalendarDays
-                size={20}
-                className="text-indigo-500"
-              />
-
-              <h2 className="mt-4 font-semibold text-gray-900">
-                Your planner
-              </h2>
-
-              <p className="mt-2 text-sm leading-6 text-gray-500">
-                See today's focused schedule built around
-                your tasks and commitments.
-              </p>
+                  <h2 className="mt-4 font-semibold text-gray-900">
+                    Today's planner
+                  </h2>
 
 
-              <Link
-                to="/planner"
-                className="mt-5 inline-block"
-                onClick={() => {
+                  <p className="mt-2 text-sm leading-6 text-gray-500">
+                    See how TinyPal has arranged today's
+                    tasks around your routine and commitments.
+                  </p>
 
-                  setShowPlannerHint(false);
 
-                  sessionStorage.removeItem(
-                    "tinypal_show_planner_hint"
-                  );
+                  {/* VIEW PLANNER BUTTON */}
 
-                }}
-              >
+                  <div className="relative mt-5 inline-block">
 
-                <Button variant="secondary">
-                  View planner
-                </Button>
+                    {showPlannerHint && (
+                      <>
+                        <span className="pointer-events-none absolute -inset-2 animate-pulse rounded-2xl border-2 border-violet-300" />
 
-              </Link>
+                        <span className="pointer-events-none absolute -inset-4 animate-pulse rounded-3xl bg-violet-400/5" />
 
-            </Card>
+                        <span className="pointer-events-none absolute -right-4 -top-4 animate-pulse text-lg text-violet-500">
+                          ✦
+                        </span>
 
-          </div>
+                        <span className="pointer-events-none absolute -bottom-3 -left-3 animate-pulse text-sm text-indigo-400">
+                          ✧
+                        </span>
+                      </>
+                    )}
 
-        </section>
+
+                    <Link
+                      to="/planner"
+                      onClick={() => {
+                        setShowPlannerHint(false);
+
+                        sessionStorage.removeItem(
+                          "tinypal_show_planner_hint"
+                        );
+                      }}
+                    >
+                      <Button variant="secondary">
+
+                        <CalendarDays size={16} />
+
+                        View planner
+
+                      </Button>
+                    </Link>
+
+                  </div>
+
+                </Card>
+
+              </div>
+
+            </section>
+
+          </>
+        )}
 
       </div>
 
 
-      {/* ================= TASK MODAL ================= */}
+      {/* TASK MODAL */}
 
       {modal && (
-
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-gray-950/30 px-5 backdrop-blur-sm"
           onMouseDown={close}
@@ -998,13 +1276,13 @@ function Dashboard() {
               <div>
 
                 <p className="text-xs font-semibold uppercase tracking-wider text-indigo-500">
-                  TinyPal
+                  Today's plan
                 </p>
 
                 <h2 className="mt-1 text-xl font-semibold text-gray-900">
                   {editingId
                     ? "Edit task"
-                    : "Add a task"}
+                    : "Add task"}
                 </h2>
 
               </div>
@@ -1013,8 +1291,7 @@ function Dashboard() {
               <button
                 type="button"
                 onClick={close}
-                className="flex h-9 w-9 items-center justify-center rounded-xl text-gray-400 transition hover:bg-gray-100 hover:text-gray-700"
-                aria-label="Close"
+                className="flex h-9 w-9 items-center justify-center rounded-xl text-gray-400 hover:bg-gray-100"
               >
                 <X size={18} />
               </button>
@@ -1031,22 +1308,24 @@ function Dashboard() {
                 autoFocus
                 value={form.title}
                 onChange={(event) =>
-                  setForm((current) => ({
-                    ...current,
-                    title: event.target.value,
-                  }))
+                  setForm({
+                    ...form,
+                    title:
+                      event.target.value,
+                  })
                 }
-                placeholder="e.g. Complete DBMS assignment"
+                placeholder="What needs to get done today?"
               />
 
 
               <Select
                 value={form.category}
                 onChange={(event) =>
-                  setForm((current) => ({
-                    ...current,
-                    category: event.target.value,
-                  }))
+                  setForm({
+                    ...form,
+                    category:
+                      event.target.value,
+                  })
                 }
               >
 
@@ -1064,7 +1343,7 @@ function Dashboard() {
               </Select>
 
 
-              <div className="flex justify-end gap-3">
+              <div className="flex justify-end gap-2">
 
                 <Button
                   type="button"
@@ -1074,7 +1353,6 @@ function Dashboard() {
                 >
                   Cancel
                 </Button>
-
 
                 <Button
                   type="submit"
@@ -1097,12 +1375,26 @@ function Dashboard() {
           </div>
 
         </div>
-
       )}
+
+
+      <style>{`
+        @keyframes tinypal-confetti {
+          0% {
+            transform: translateY(-20px) rotate(0deg);
+            opacity: 1;
+          }
+
+          100% {
+            transform: translateY(105vh) rotate(720deg);
+            opacity: 0;
+          }
+        }
+      `}</style>
 
     </main>
   );
 }
 
 
-export default Dashboard;  
+export default Dashboard;

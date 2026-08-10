@@ -103,7 +103,6 @@ class TodayPlanView(APIView):
         today = timezone.localdate()
 
         try:
-
             plan = DailyPlan.objects.get(
                 user=request.user,
                 date=today,
@@ -156,7 +155,6 @@ class TodayPlanView(APIView):
             DailyPlanSerializer(plan).data,
             status=status.HTTP_201_CREATED,
         )
-
 
 class TaskListView(APIView):
 

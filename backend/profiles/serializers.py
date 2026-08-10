@@ -280,9 +280,7 @@ class ProfileSerializer(
         )
 
 
-class DailyPlanSerializer(
-    serializers.ModelSerializer
-):
+class DailyPlanSerializer(serializers.ModelSerializer):
 
     tasks = TaskSerializer(
         many=True,
@@ -291,7 +289,7 @@ class DailyPlanSerializer(
 
     priorities = serializers.ListField(
         child=serializers.CharField(
-            max_length=100
+            max_length=100,
         ),
         required=False,
         allow_empty=True,

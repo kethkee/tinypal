@@ -1,41 +1,112 @@
 import axios from "axios";
 
 const api = axios.create({
-  baseURL: "http://127.0.0.1:8000/api/",
+  baseURL: "http://localhost:8000/api/",
   headers: {
     "Content-Type": "application/json",
   },
 });
 
-api.interceptors.request.use((config) => {
-  const token = localStorage.getItem("access");
+/*
+ * Attach JWT access token to every API request.
+ */
+api.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem("access");
 
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
+    if (token) {
+      config.headers = config.headers || {};
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
   }
+);
 
-  return config;
-});
 
+/*
+ * If the access token expires,
+ * automatically try to refresh it.
+ */
 api.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    return response;
+  },
+
   async (error) => {
     const originalRequest = error.config;
-    if (error.response?.status === 401 && !originalRequest?._retry && localStorage.getItem("refresh")) {
+
+    /*
+     * Don't try to refresh the token for
+     * the token endpoints themselves.
+     */
+    const isAuthRequest =
+      originalRequest?.url?.includes(
+        "/token/"
+      );
+
+    if (
+      error.response?.status === 401 &&
+      !originalRequest?._retry &&
+      !isAuthRequest
+    ) {
+      const refreshToken =
+        localStorage.getItem("refresh");
+
+      if (!refreshToken) {
+        return Promise.reject(error);
+      }
+
       originalRequest._retry = true;
+
       try {
-        const refreshResponse = await axios.post("http://127.0.0.1:8000/api/token/refresh/", { refresh: localStorage.getItem("refresh") });
-        localStorage.setItem("access", refreshResponse.data.access);
-        originalRequest.headers.Authorization = `Bearer ${refreshResponse.data.access}`;
+        const refreshResponse =
+          await axios.post(
+            "http://localhost:8000/api/token/refresh/",
+            {
+              refresh: refreshToken,
+            }
+          );
+
+        const newAccessToken =
+          refreshResponse.data.access;
+
+        localStorage.setItem(
+          "access",
+          newAccessToken
+        );
+
+        originalRequest.headers =
+          originalRequest.headers || {};
+
+        originalRequest.headers.Authorization =
+          `Bearer ${newAccessToken}`;
+
         return api(originalRequest);
+
       } catch (refreshError) {
+        console.error(
+          "Token refresh failed:",
+          refreshError.response?.data ||
+            refreshError
+        );
+
         localStorage.removeItem("access");
         localStorage.removeItem("refresh");
-        return Promise.reject(refreshError);
+        localStorage.removeItem("user_email");
+
+        return Promise.reject(
+          refreshError
+        );
       }
     }
+
     return Promise.reject(error);
-  },
+  }
 );
+
 
 export default api;
