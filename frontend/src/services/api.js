@@ -1,15 +1,17 @@
 import axios from "axios";
 
+const API_BASE_URL =
+  import.meta.env.VITE_API_URL ||
+  "http://localhost:8000/api/";
+
 const api = axios.create({
-  baseURL:
-    import.meta.env.VITE_API_URL ||
-    "http://localhost:8000/api/",
+  baseURL: API_BASE_URL,
   headers: {
     "Content-Type": "application/json",
   },
 });
 
-// Attach JWT access token to every API request.
+// Attach JWT access token to every request
 api.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem("access");
@@ -24,7 +26,7 @@ api.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
-// Automatically refresh an expired access token.
+// Refresh expired access token automatically
 api.interceptors.response.use(
   (response) => response,
 
@@ -49,16 +51,14 @@ api.interceptors.response.use(
 
       try {
         const refreshResponse = await axios.post(
-          `${
-            import.meta.env.VITE_API_URL ||
-            "http://localhost:8000/api/"
-          }token/refresh/`,
+          `${API_BASE_URL}token/refresh/`,
           {
             refresh: refreshToken,
           }
         );
 
-        const newAccessToken = refreshResponse.data.access;
+        const newAccessToken =
+          refreshResponse.data.access;
 
         localStorage.setItem(
           "access",
@@ -73,11 +73,6 @@ api.interceptors.response.use(
 
         return api(originalRequest);
       } catch (refreshError) {
-        console.error(
-          "Token refresh failed:",
-          refreshError.response?.data || refreshError
-        );
-
         localStorage.removeItem("access");
         localStorage.removeItem("refresh");
         localStorage.removeItem("user_email");
